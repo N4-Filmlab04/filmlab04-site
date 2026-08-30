@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your cart — Filmlab04</title>
+<link rel="icon" type="image/png" href="images/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><img src="images/logo-mark.png" alt="Filmlab04" style="height:28px; width:auto; display:block;"></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="services.html">Services</a></li>
+      <li><a href="blog.html">Blog</a></li>
+    </ul>
+    <a href="cart.html" class="nav-cart">
+      🛒<span class="nav-cart-badge">0</span>
+    </a>
+  </div>
+</nav>
+
+<div class="container" style="max-width:640px; padding: 48px 0;">
+  <h1>Your cart</h1>
+  <p class="muted" style="margin-bottom:32px;">Demo checkout — no real payment is taken. This is a prototype flow for Filmlab04.</p>
+
+  <div id="page-cart-items"></div>
+
+  <div id="page-cart-summary" style="margin-top:24px; padding-top:24px; border-top:1px solid var(--line);">
+    <div class="cart-subtotal" style="font-size:1.125rem;"><span>Subtotal</span><span class="amount">RM0.00</span></div>
+    <button class="btn btn-primary btn-block" id="checkout-btn" style="margin-top:16px;">Checkout</button>
+  </div>
+
+  <div id="order-confirmation" style="display:none; text-align:center; padding: 48px 0;">
+    <h2>Order placed 🎉</h2>
+    <p>This is a demo confirmation — no real payment or courier was involved.</p>
+    <p><strong>Order ID:</strong> <span id="conf-order-id"></span></p>
+    <p><strong>Tracking number:</strong> <span id="conf-tracking-id"></span></p>
+    <a href="shop.html" class="btn btn-secondary">Continue shopping</a>
+  </div>
+</div>
+
+<footer class="site-footer container">
+  <div class="footer-cols">
+    <div>
+      <strong>Filmlab04</strong>
+      <p>Film Lab 04 offers professional film processing, scanning, and support for film photography lovers, preserving the unique charm of analog photography.</p>
+    </div>
+    <div>
+      <a href="services.html">Services</a><br>
+      <a href="blog.html">Blog</a><br>
+      <a href="shop.html">Shop</a>
+    </div>
+  </div>
+</footer>
+
+<script src="js/cart.js"></script>
+<script>
+  async function renderPageCart() {
+    const container = document.getElementById('page-cart-items');
+    const summary = document.getElementById('page-cart-summary');
+    const cart = getCart();
+    if (cart.length === 0) {
+      container.innerHTML = '<p class="cart-empty">Your cart is empty. <a href="shop.html">Browse film rolls →</a></p>';
+      summary.style.display = 'none';
+      return;
+    }
+    summary.style.display = 'block';
+    const products = await loadProducts();
+    let subtotal = 0;
+    container.innerHTML = cart.map(line => {
+      const p = products.find(p => p.id === line.id);
+      if (!p) return '';
+      const lineTotal = p.price * line.qty;
+      subtotal += lineTotal;
+      const idJs = escapeJsString(p.id);
+      const variantArg = line.variant ? `, '${escapeJsString(line.variant)}'` : ', null';
+      return `
+        <div class="cart-line">
+          <div class="cart-line-thumb"></div>
+          <div class="cart-line-info">
+            <div class="name">${escapeHtml(p.brand)} ${escapeHtml(p.name)}${line.variant ? ` — ${escapeHtml(line.variant)}` : ''}</div>
+            <div class="meta">${escapeHtml(p.currency)}${p.price.toFixed(2)} each</div>
+            <div class="cart-line-qty">
+              <button onclick="setQty('${idJs}', ${line.qty - 1}${variantArg}); renderPageCart();">-</button>
+              <span>${line.qty}</span>
+              <button onclick="setQty('${idJs}', ${line.qty + 1}${variantArg}); renderPageCart();">+</button>
+            </div>
+          </div>
+          <div class="cart-line-total">${escapeHtml(p.currency)}${lineTotal.toFixed(2)}</div>
+        </div>`;
+    }).join('');
+    document.querySelector('#page-cart-summary .amount').textContent = `RM${subtotal.toFixed(2)}`;
+  }
+
+  document.getElementById('checkout-btn').addEventListener('click', () => {
+    const result = mockCheckout();
+    if (!result) return;
+    document.getElementById('page-cart-items').style.display = 'none';
+    document.getElementById('page-cart-summary').style.display = 'none';
+    document.getElementById('order-confirmation').style.display = 'block';
+    document.getElementById('conf-order-id').textContent = result.orderId;
+    document.getElementById('conf-tracking-id').textContent = result.trackingId;
+  });
+
+  document.addEventListener('DOMContentLoaded', renderPageCart);
+</script>
+</body>
+</html>

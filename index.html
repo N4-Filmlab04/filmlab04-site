@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Filmlab04 — Film rolls &amp; developing, Alor Setar</title>
+<link rel="icon" type="image/png" href="images/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><img src="images/logo-mark.png" alt="Filmlab04" style="height:28px; width:auto; display:block;"></a>
+    <ul class="nav-links">
+      <li><a href="index.html" class="active">Home</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="services.html">Services</a></li>
+      <li><a href="blog.html">Blog</a></li>
+    </ul>
+    <a href="cart.html" class="nav-cart">
+      🛒<span class="nav-cart-badge">0</span>
+    </a>
+  </div>
+</nav>
+
+<header class="hero container">
+  <img src="images/logo.png" alt="Filmlab04" style="max-width:220px; width:100%; height:auto; border-radius:16px; margin-bottom:24px;">
+  <h1>Film, developed &amp; sold with care.</h1>
+  <p class="lead">Filmlab04 is N4 Camera Store's home for 35mm film — rolls, developing, and disposables, for anyone shooting analog in and around Alor Setar.</p>
+  <a href="shop.html" class="btn btn-primary">Browse film rolls</a>
+</header>
+
+<section class="section container">
+  <div class="section-head">
+    <h2>Popular this month</h2>
+    <a href="shop.html">View all →</a>
+  </div>
+  <div class="product-grid" id="featured-grid"></div>
+</section>
+
+<section class="section container" style="background:var(--surface-alt); border-radius:24px;">
+  <div style="padding: 32px; max-width:560px;">
+    <h2>Not sure which stock to shoot?</h2>
+    <p>Every roll on Filmlab04 lists its ISO, grain character, and whether it's colour or black &amp; white — so you can pick by look, not just by name.</p>
+    <a href="compare.html" class="btn btn-secondary">Compare film stocks</a>
+  </div>
+</section>
+
+<section class="section container">
+  <div class="section-head">
+    <h2>What we do</h2>
+    <a href="services.html">All services →</a>
+  </div>
+  <div class="grid-2">
+    <div>
+      <h3>Film developing</h3>
+      <p>C-41 colour and black &amp; white processing, with scanning.</p>
+    </div>
+    <div>
+      <h3>Film rolls &amp; disposables</h3>
+      <p>Kodak, Fujifilm, Harman, and more — always in stock at the store, and online.</p>
+    </div>
+  </div>
+</section>
+
+<div class="cart-overlay"></div>
+<aside class="cart-drawer">
+  <div class="cart-drawer-head">
+    <h3 class="mt-0">Your cart</h3>
+    <button class="cart-close btn btn-secondary btn-sm">Close</button>
+  </div>
+  <div class="cart-drawer-items"></div>
+  <div class="cart-drawer-foot">
+    <div class="cart-subtotal"><span>Subtotal</span><span class="amount">RM0.00</span></div>
+    <a href="cart.html" class="btn btn-primary btn-block">Checkout</a>
+  </div>
+</aside>
+
+<footer class="site-footer container">
+  <div class="footer-cols">
+    <div>
+      <strong>Filmlab04</strong>
+      <p>Film Lab 04 offers professional film processing, scanning, and support for film photography lovers, preserving the unique charm of analog photography.</p>
+    </div>
+    <div>
+      <a href="services.html">Services</a><br>
+      <a href="blog.html">Blog</a><br>
+      <a href="shop.html">Shop</a>
+    </div>
+  </div>
+</footer>
+
+<script src="js/cart.js"></script>
+<script>
+  loadProducts().then(products => {
+    document.getElementById('featured-grid').innerHTML =
+      products.slice(0, 4).map(p => `
+        <article class="product-card">
+          <a href="product.html?id=${p.id}" class="product-card-img">${p.image ? `<img src="${p.image}">` : 'photo coming soon'}</a>
+          <div class="product-card-body">
+            <div class="product-brand">${p.brand}</div>
+            <a href="product.html?id=${p.id}"><h3 class="product-name">${p.name}</h3></a>
+            <div class="product-card-footer">
+              <span class="product-price">${p.currency}${p.price.toFixed(2)}</span>
+              <button class="btn btn-primary btn-sm" onclick="addToCart('${p.id}')">Add</button>
+            </div>
+          </div>
+        </article>`).join('');
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Filmlab04</title>
+<link rel="icon" type="image/png" href="images/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><img src="images/logo-mark.png" alt="Filmlab04" style="height:28px; width:auto; display:block;"></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html" class="active">Shop</a></li>
+      <li><a href="services.html">Services</a></li>
+      <li><a href="blog.html">Blog</a></li>
+    </ul>
+    <a href="cart.html" class="nav-cart">
+      🛒<span class="nav-cart-badge">0</span>
+    </a>
+  </div>
+</nav>
+
+<div class="container" style="padding: 48px 0;">
+  <a href="shop.html" class="muted">← Back to shop</a>
+  <div class="product-detail" style="margin-top:24px;"></div>
+</div>
+
+<div class="cart-overlay"></div>
+<aside class="cart-drawer">
+  <div class="cart-drawer-head">
+    <h3 class="mt-0">Your cart</h3>
+    <button class="cart-close btn btn-secondary btn-sm">Close</button>
+  </div>
+  <div class="cart-drawer-items"></div>
+  <div class="cart-drawer-foot">
+    <div class="cart-subtotal"><span>Subtotal</span><span class="amount">RM0.00</span></div>
+    <a href="cart.html" class="btn btn-primary btn-block">Checkout</a>
+  </div>
+</aside>
+
+<footer class="site-footer container">
+  <div class="footer-cols">
+    <div>
+      <strong>Filmlab04</strong>
+      <p>Film Lab 04 offers professional film processing, scanning, and support for film photography lovers, preserving the unique charm of analog photography.</p>
+    </div>
+    <div>
+      <a href="services.html">Services</a><br>
+      <a href="blog.html">Blog</a><br>
+      <a href="shop.html">Shop</a>
+    </div>
+  </div>
+</footer>
+
+<script src="js/cart.js"></script>
+<script src="js/product.js"></script>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Services — Filmlab04</title>
+<link rel="icon" type="image/png" href="images/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><img src="images/logo-mark.png" alt="Filmlab04" style="height:28px; width:auto; display:block;"></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="services.html" class="active">Services</a></li>
+      <li><a href="blog.html">Blog</a></li>
+    </ul>
+    <a href="cart.html" class="nav-cart">
+      🛒<span class="nav-cart-badge">0</span>
+    </a>
+  </div>
+</nav>
+
+<header class="container" style="padding: 48px 0 24px;">
+  <h1>Services</h1>
+  <p>Everything Filmlab04 offers beyond selling rolls.</p>
+</header>
+
+<section class="container section" style="padding-top:0;">
+  <h2>Developing price &amp; lead time</h2>
+  <p class="muted" style="margin-top:-8px;">135 film only</p>
+  <div style="overflow-x:auto;">
+    <table class="price-table">
+      <thead>
+        <tr>
+          <th>C-41 colour negative</th>
+          <th>RM</th>
+          <th>Lead time</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Develop and scan</td>
+          <td>18</td>
+          <td>1–2 working days</td>
+        </tr>
+        <tr>
+          <td>Developing only</td>
+          <td>13</td>
+          <td>1–2 working days</td>
+        </tr>
+        <tr>
+          <td>Cut film scanning only</td>
+          <td>13</td>
+          <td>1–2 working days</td>
+        </tr>
+        <tr class="price-addon">
+          <td>Add-on: High resolution scan</td>
+          <td>10</td>
+          <td>1–2 working days</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="price-note">Open Monday–Saturday, 10:00AM–7:00PM.</p>
+  <p class="price-note">Black &amp; White processing — coming soon.</p>
+</section>
+
+<section class="container section" id="dropoff" style="padding-top:0; max-width:640px;">
+  <h2>FilmLab04 Drop-off Form</h2>
+  <p class="muted" style="margin-top:-8px;">Fill this in before you drop your film at our lab — helps us process it faster.</p>
+
+  <form id="dropoff-form" novalidate>
+
+    <section class="form-card">
+      <div class="form-step-head">
+        <span class="form-step-num">1</span>
+        <h2 class="form-step-title">Contact Information</h2>
+      </div>
+
+      <label class="form-field">Full Name
+        <input type="text" id="d-name" placeholder="Your full name" autocomplete="name" required>
+      </label>
+
+      <div class="form-field">Phone Number
+        <div class="form-phone-field">
+          <div class="phone-picker" id="phone-picker">
+            <button type="button" class="phone-picker-trigger" id="phone-picker-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="phone-picker-flag">🇲🇾</span>
+              <span class="phone-picker-code">+60</span>
+              <svg class="phone-picker-caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <input type="hidden" id="d-phone-country" value="60">
+            <div class="phone-picker-panel" id="phone-picker-panel" role="listbox" hidden>
+              <input type="text" class="phone-picker-search" id="phone-picker-search" placeholder="Search" autocomplete="off">
+              <div class="phone-picker-list" id="phone-picker-list"></div>
+            </div>
+          </div>
+          <input type="tel" id="d-phone" placeholder="123456789" autocomplete="tel-national" inputmode="numeric" required>
+        </div>
+      </div>
+
+      <label class="form-field">Email Address
+        <input type="email" id="d-email" placeholder="example@gmail.com" autocomplete="email" required>
+      </label>
+    </section>
+
+    <section class="form-card">
+      <div class="form-step-head">
+        <span class="form-step-num">2</span>
+        <h2 class="form-step-title">Drop-off Details</h2>
+      </div>
+
+      <div class="form-field">
+        How are you sending it?
+        <div class="segmented" data-field="method">
+          <button type="button" class="segmented-btn active" data-value="Walk-in">Walk-in</button>
+          <button type="button" class="segmented-btn" data-value="Mail / Courier">Mail / Courier</button>
+        </div>
+      </div>
+
+      <div id="courier-field" hidden>
+        <label class="form-field">Courier provider
+          <select id="d-courier">
+            <option value="">Select…</option>
+            <option value="Pos Laju">Pos Laju</option>
+            <option value="J&amp;T Express">J&amp;T Express</option>
+            <option value="Ninja Van">Ninja Van</option>
+            <option value="City-Link Express">City-Link Express</option>
+            <option value="GDex">GDex</option>
+            <option value="DHL eCommerce">DHL eCommerce</option>
+            <option value="Skynet">Skynet</option>
+            <option value="Other">Other</option>
+          </select>
+          <input type="text" id="d-courier-other" placeholder="Courier name" hidden>
+        </label>
+        <label class="form-field">Tracking number
+          <input type="text" id="d-tracking" placeholder="e.g. EA123456789MY">
+        </label>
+      </div>
+
+      <label class="form-field">Number of rolls
+        <input type="number" id="d-rolls" min="1" value="1" inputmode="numeric" required>
+      </label>
+
+      <label class="form-field">Service
+        <select id="d-service" required>
+          <option value="Develop and scan">Develop and scan — RM18</option>
+          <option value="Developing only">Developing only — RM13</option>
+          <option value="Cut film scanning only">Cut film scanning only — RM13</option>
+        </select>
+      </label>
+
+      <label class="form-field-inline">
+        <input type="checkbox" id="d-highres">
+        Add high resolution scan (+RM10 per roll)
+      </label>
+      <a href="https://sites.google.com/filmlab04.com/filmlabscancomparison/home" target="_blank" rel="noopener" class="muted" style="display:inline-block; font-size:0.8125rem; margin:-8px 0 16px;">See the difference between normal &amp; high-res scans →</a>
+
+      <div class="form-field">
+        When to pay?
+        <div class="segmented" data-field="payment">
+          <button type="button" class="segmented-btn" data-value="Pay now">Pay now</button>
+          <button type="button" class="segmented-btn" data-value="Pay later">Pay later</button>
+        </div>
+      </div>
+
+      <div class="form-field">
+        Do you want to keep the film strips (negatives)?
+        <div class="notice">
+          <strong>About film strips (negatives)</strong>
+          <p>The developed physical negatives, not just the digital scans. They can fade or get scratched over time if not stored carefully — most people are fine with just the digital files.</p>
+        </div>
+        <div class="segmented" data-field="keepStrips">
+          <button type="button" class="segmented-btn" data-value="Yes, keep">Yes, keep</button>
+          <button type="button" class="segmented-btn" data-value="No, dispose">No, dispose</button>
+        </div>
+      </div>
+
+      <div class="form-field" id="strips-return-field" hidden>
+        How would you like to get them back?
+        <div class="segmented" data-field="stripsReturn">
+          <button type="button" class="segmented-btn" data-value="Walk-in pickup">Walk-in pickup</button>
+          <button type="button" class="segmented-btn" data-value="Mail / Courier">Mail / Courier</button>
+        </div>
+        <p class="muted" id="strips-return-note" style="font-size:0.8125rem; margin-top:8px;" hidden>We'll contact you via WhatsApp to arrange sending your film strips back.</p>
+      </div>
+
+      <label class="form-field">Reference / envelope number <span class="muted">(optional)</span>
+        <input type="text" id="d-ref" placeholder="e.g. written on your film bag">
+      </label>
+
+      <label class="form-field">Remarks / notes <span class="muted">(optional)</span>
+        <textarea id="d-notes" rows="3" placeholder="Any additional instructions..."></textarea>
+      </label>
+    </section>
+
+    <section class="receipt-wrap">
+      <div class="receipt-label">Submission preview</div>
+      <div class="receipt">
+        <div class="receipt-head">Filmlab04 Drop-off</div>
+        <div class="receipt-body">
+          <div class="receipt-row"><span>Date</span><strong id="p-date">—</strong></div>
+          <div class="receipt-section-label">Customer details</div>
+          <div class="receipt-row"><span>Name</span><strong id="p-name">…</strong></div>
+          <div class="receipt-row"><span>Phone</span><strong id="p-phone">+60</strong></div>
+          <div class="receipt-row"><span>Email</span><strong id="p-email">…</strong></div>
+          <div class="receipt-section-label">Drop-off details</div>
+          <div class="receipt-box">
+            <div class="receipt-row"><span>Method</span><strong id="p-method">Walk-in</strong></div>
+            <div class="receipt-row" id="p-courier-row" hidden><span>Courier</span><strong id="p-courier">…</strong></div>
+            <div class="receipt-row" id="p-tracking-row" hidden><span>Tracking No.</span><strong id="p-tracking">…</strong></div>
+            <div class="receipt-row"><span>Rolls</span><strong id="p-rolls">1</strong></div>
+            <div class="receipt-row"><span>Service</span><strong id="p-service">Develop and scan</strong></div>
+            <div class="receipt-row" id="p-highres-row" hidden><span>High-res scan</span><strong>+RM10 per roll</strong></div>
+            <div class="receipt-row"><span>Payment</span><strong id="p-payment">Pending</strong></div>
+            <div class="receipt-row"><span>Film strips</span><strong id="p-strips">Select…</strong></div>
+            <div class="receipt-row" id="p-strips-return-row" hidden><span>Return method</span><strong id="p-strips-return">Select…</strong></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="notice notice-warning">
+      <strong>Film stock disclaimer</strong>
+      <p>Results depend on your film. We're not liable for poor outcomes from expired, re-spooled, or third-party stock, and no refunds or re-dos apply on this basis.</p>
+    </div>
+
+    <label class="form-field-inline" style="margin-top:16px;">
+      <input type="checkbox" id="d-agree" required>
+      I confirm all the details above are accurate.
+    </label>
+
+    <p class="form-error" id="d-error" hidden></p>
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top:16px;">Submit drop-off</button>
+  </form>
+</section>
+
+<section class="container section" style="padding-top:0;">
+  <h2>Also available</h2>
+  <div class="grid-2">
+    <div>
+      <h3>Film rolls</h3>
+      <p>Fresh stock from Kodak, Fujifilm, Harman, and more.</p>
+    </div>
+    <div>
+      <h3>Disposable cameras</h3>
+      <p>Single-use film cameras, ready to shoot straight out of the pack.</p>
+    </div>
+  </div>
+  <a href="shop.html" class="btn btn-primary" style="margin-top:24px;">Shop film rolls &amp; disposable cameras</a>
+</section>
+
+<div class="cart-overlay"></div>
+<aside class="cart-drawer">
+  <div class="cart-drawer-head">
+    <h3 class="mt-0">Your cart</h3>
+    <button class="cart-close btn btn-secondary btn-sm">Close</button>
+  </div>
+  <div class="cart-drawer-items"></div>
+  <div class="cart-drawer-foot">
+    <div class="cart-subtotal"><span>Subtotal</span><span class="amount">RM0.00</span></div>
+    <a href="cart.html" class="btn btn-primary btn-block">Checkout</a>
+  </div>
+</aside>
+
+<footer class="site-footer container">
+  <div class="footer-cols">
+    <div>
+      <strong>Filmlab04</strong>
+      <p>Film Lab 04 offers professional film processing, scanning, and support for film photography lovers, preserving the unique charm of analog photography.</p>
+    </div>
+    <div>
+      <a href="services.html">Services</a><br>
+      <a href="blog.html">Blog</a><br>
+      <a href="shop.html">Shop</a>
+    </div>
+  </div>
+</footer>
+
+<script src="js/cart.js"></script>
+<script src="js/country-codes.js"></script>
+<script src="js/dropoff.js"></script>
+</body>
+</html>

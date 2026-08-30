@@ -1,0 +1,270 @@
+[
+  {
+    "id": "kodak-gold-200",
+    "brand": "Kodak",
+    "name": "Gold 200",
+    "tagline": "Classic warm golden tones",
+    "iso": 200,
+    "format": "135",
+    "type": "Color",
+    "shots": 36,
+    "price": 59,
+    "currency": "RM",
+    "stock": "sold-out",
+    "image": "images/products/kodak-gold-200.jpg",
+    "sampleImages": [],
+    "description": "The everyday consumer favourite — warm, slightly saturated colour with a nostalgic golden cast. Forgiving in most daylight conditions, a safe first roll for anyone new to film.",
+    "category": "film"
+  },
+  {
+    "id": "kodak-colorplus-200",
+    "brand": "Kodak",
+    "name": "ColorPlus 200",
+    "tagline": "Soft, budget-friendly colour",
+    "iso": 200,
+    "format": "135",
+    "type": "Color",
+    "shots": 36,
+    "price": 59,
+    "currency": "RM",
+    "stock": "sold-out",
+    "image": "images/products/kodak-colorplus-200.jpg",
+    "sampleImages": [],
+    "description": "Kodak's most affordable colour negative film. Softer contrast and muted saturation compared to Gold 200 — a gentle, vintage-leaning look.",
+    "category": "film"
+  },
+  {
+    "id": "kodak-ultramax-400",
+    "brand": "Kodak",
+    "name": "Ultramax 400",
+    "tagline": "Flexible all-conditions colour",
+    "iso": 400,
+    "format": "135",
+    "type": "Color",
+    "shots": 36,
+    "price": 59,
+    "currency": "RM",
+    "stock": "sold-out",
+    "image": "images/products/kodak-ultramax-400.jpg",
+    "sampleImages": [],
+    "description": "A versatile mid-speed colour film that handles overcast days and indoor light better than the 200-speed stocks, without losing Kodak's signature warmth.",
+    "category": "film"
+  },
+  {
+    "id": "leica-monopan-50",
+    "brand": "Leica",
+    "name": "Monopan 50",
+    "tagline": "Fine-grain black & white",
+    "iso": 50,
+    "format": "135",
+    "type": "B&W",
+    "shots": 36,
+    "price": 99,
+    "currency": "RM",
+    "stock": "sold-out",
+    "image": "images/products/leica-monopan-50.webp",
+    "sampleImages": [],
+    "description": "A slow, fine-grain panchromatic black & white film with a wide tonal range. Best in bright daylight or on a tripod — reward for the extra care is exceptional sharpness.",
+    "category": "film"
+  },
+  {
+    "id": "harman-phoenix-200",
+    "brand": "Harman",
+    "name": "Phoenix 200",
+    "tagline": "Experimental, unpredictable colour",
+    "iso": 200,
+    "format": "135",
+    "type": "Color",
+    "shots": 36,
+    "price": 99,
+    "currency": "RM",
+    "stock": "sold-out",
+    "image": "images/products/harman-phoenix-200.jpg",
+    "sampleImages": [],
+    "description": "Ilford's experimental colour negative stock — expect halation, colour shifts, and visible grain. Loved by shooters who want a distinct, imperfect look rather than accuracy.",
+    "category": "film"
+  },
+  {
+    "id": "fujifilm-200",
+    "brand": "Fujifilm",
+    "name": "Fujicolor 200",
+    "tagline": "Natural soft skin tones",
+    "iso": 200,
+    "format": "135",
+    "type": "Color",
+    "shots": 36,
+    "price": 59,
+    "currency": "RM",
+    "stock": "sold-out",
+    "image": "images/products/fujifilm-200.jpg",
+    "sampleImages": [],
+    "description": "Cooler and more neutral than Kodak's consumer stocks, with gentle greens and flattering skin tones. A dependable everyday roll.",
+    "category": "film"
+  },
+  {
+    "id": "fujifilm-400",
+    "brand": "Fujifilm",
+    "name": "Fujicolor 400",
+    "tagline": "Sharp, vibrant all-purpose",
+    "iso": 400,
+    "format": "135",
+    "type": "Color",
+    "shots": 36,
+    "price": 59,
+    "currency": "RM",
+    "stock": "sold-out",
+    "image": "images/products/fujifilm-400.jpg",
+    "sampleImages": [],
+    "description": "A punchier, more saturated step up from Fujicolor 200, with enough speed for indoor and lower-light shooting while staying sharp.",
+    "category": "film"
+  },
+  {
+    "id": "amber-t800",
+    "brand": "Amber",
+    "name": "T800",
+    "tagline": "High-speed colour for low light",
+    "iso": 800,
+    "format": "135",
+    "type": "Color",
+    "shots": 36,
+    "price": 79,
+    "currency": "RM",
+    "stock": "sold-out",
+    "image": "images/products/amber-t800.jpg",
+    "sampleImages": [],
+    "description": "A fast colour negative stock built for dim conditions — evenings, indoors, overcast days. Leans warm and richly saturated, with noticeably more grain than the 200/400-speed rolls in exchange for the extra stops of light.",
+    "category": "film"
+  },
+  {
+    "id": "lucky-color-200",
+    "brand": "Lucky",
+    "name": "Color 200",
+    "tagline": "A classic Chinese film brand's comeback",
+    "iso": 200,
+    "format": "135",
+    "type": "Color",
+    "shots": 36,
+    "price": 59,
+    "currency": "RM",
+    "stock": "sold-out",
+    "image": "images/products/lucky-color-200.jpg",
+    "sampleImages": [
+      "images/products/lucky-color-200.jpg"
+    ],
+    "description": "Lucky Film's first new colour negative stock in over a decade — a brand-new C-41 formulation, not a reissue of the old stock. ISO 200, 36 exposures, priced to be an easy everyday roll while the brand rebuilds its reputation from scratch.",
+    "category": "film"
+  },
+  {
+    "id": "fujifilm-quicksnap",
+    "brand": "Fujifilm",
+    "name": "QuickSnap 27exp",
+    "tagline": "Grab-and-go disposable, no fuss",
+    "iso": 400,
+    "format": "135",
+    "type": "Color",
+    "shots": 27,
+    "price": 119,
+    "currency": "RM",
+    "stock": "sold-out",
+    "image": "images/products/fujifilm-quicksnap.jpg",
+    "sampleImages": [],
+    "description": "A single-use camera loaded and ready to shoot — built-in flash, fixed focus. Fuji's 400-speed colour stock leans cooler and more neutral than Kodak's, with true-to-life greens and punchy but not overblown saturation. No settings to think about, just point and shoot until the roll runs out, then bring the whole camera in for developing.",
+    "category": "disposable"
+  },
+  {
+    "id": "kodak-funsaver",
+    "brand": "Kodak",
+    "name": "FunSaver 27exp",
+    "tagline": "Classic disposable, bright flash",
+    "iso": 800,
+    "format": "135",
+    "type": "Color",
+    "shots": 27,
+    "price": 109,
+    "currency": "RM",
+    "stock": "sold-out",
+    "image": "images/products/kodak-funsaver.jpg",
+    "sampleImages": [],
+    "description": "Kodak's single-use film camera, pre-loaded with high-speed colour film for reliable shots indoors and in low light. Expect warm, saturated tones and noticeably more grain than the 200/400-speed rolls — part of the charm under flash. Simple flash button, no focusing needed.",
+    "category": "disposable"
+  },
+  {
+    "id": "kodak-ec35",
+    "brand": "Kodak",
+    "name": "EC35",
+    "tagline": "Reusable 35mm camera, includes a free Ultramax 400 24exp roll",
+    "format": "135",
+    "type": "Camera",
+    "price": 199,
+    "currency": "RM",
+    "stock": "sold-out",
+    "image": "images/products/kodak-ec35-black.jpg",
+    "sampleImages": [
+      "images/products/kodak-ec35-sample-road.jpg",
+      "images/products/kodak-ec35-sample-trail.jpg",
+      "images/products/kodak-ec35-sample-building.jpg",
+      "images/products/kodak-ec35-sample-canopy.jpg",
+      "images/products/kodak-ec35-sample-park.jpg",
+      "images/products/kodak-ec35-sample-desk.jpg",
+      "images/products/kodak-ec35-sample-canal.jpg",
+      "images/products/kodak-ec35-sample-arch.jpg"
+    ],
+    "description": "A beginner-friendly reusable 35mm point-and-shoot with a built-in flash and a 25mm f/10 optical-grade acrylic lens. Slide the front cover open to shoot, closed to lock the shutter — no settings to fuss over. Runs on 1x AA battery (not included). Comes bundled with a free roll of Kodak Ultramax 400, 24exp, to get you shooting right away.",
+    "category": "camera",
+    "variants": [
+      {
+        "color": "Midnight Black",
+        "image": "images/products/kodak-ec35-black.jpg",
+        "stock": "in-stock"
+      },
+      {
+        "color": "Vanilla White",
+        "image": "images/products/kodak-ec35-vanilla-white.jpg",
+        "stock": "in-stock"
+      },
+      {
+        "color": "Butter Yellow",
+        "image": "images/products/kodak-ec35-butter-yellow.jpg",
+        "stock": "in-stock"
+      },
+      {
+        "color": "Lavender",
+        "image": "images/products/kodak-ec35-lavender.jpg",
+        "stock": "in-stock"
+      },
+      {
+        "color": "Powder Blue",
+        "image": "images/products/kodak-ec35-powder-blue.jpg",
+        "stock": "in-stock"
+      },
+      {
+        "color": "Blush Pink",
+        "image": "images/products/kodak-ec35-blush-pink.jpg",
+        "stock": "in-stock"
+      },
+      {
+        "color": "Avocado Green",
+        "image": "images/products/kodak-ec35-avocado-green.jpg",
+        "stock": "in-stock"
+      }
+    ],
+    "about": "The KODAK EC35 is a beginner-friendly point-and-shoot camera that strips away the complexity of film photography, putting the pure joy back into every frame. Featuring a tactile slide cover for instant protection and a built-in flash, it's designed to be tossed in your bag and ready for every golden moment — pocket size, colour surprise.",
+    "features": [
+      {
+        "title": "Slide cover",
+        "text": "Keeps your lens completely safe while doubling as an automatic shutter lock to prevent accidental shots when closed.",
+        "image": "images/products/kodak-ec35-feature-slide-cover.jpg"
+      },
+      {
+        "title": "Built-in flash",
+        "text": "Optimised for versatile shooting environments — remember to advance your film to activate the shutter and flash.",
+        "image": "images/products/kodak-ec35-feature-flash.jpg"
+      },
+      {
+        "title": "25mm lens",
+        "text": "A wide-angle lens ideal for street photography and portraits.",
+        "image": "images/products/kodak-ec35-sample-viewfinder.jpg"
+      }
+    ]
+  }
+]

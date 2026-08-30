@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Filmlab04</title>
+<link rel="icon" type="image/png" href="images/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><img src="images/logo-mark.png" alt="Filmlab04" style="height:28px; width:auto; display:block;"></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="services.html">Services</a></li>
+      <li><a href="blog.html">Blog</a></li>
+    </ul>
+    <a href="cart.html" class="nav-cart">
+      🛒<span class="nav-cart-badge">0</span>
+    </a>
+  </div>
+</nav>
+
+<div class="container" style="padding: 48px 0;">
+  <header>
+    <h1>Admin</h1>
+    <p>Manage the film catalog. Changes save straight to <code>data/products.json</code> — this only works while <code>server.py</code> is running, and this page has no login, so keep it to your own machine.</p>
+    <p class="muted" style="font-size:0.875rem;">Required fields: Product ID, Brand, Name, Price, Currency, Stock, Category.</p>
+  </header>
+
+  <div class="admin-toolbar">
+    <button class="btn btn-primary btn-sm" id="admin-new">+ New product</button>
+  </div>
+
+  <div class="admin-table-wrap"></div>
+
+  <div class="admin-editor" id="admin-editor" hidden>
+    <div class="admin-editor-head">
+      <h3 class="mt-0" id="admin-editor-title">Edit product</h3>
+      <button class="btn btn-secondary btn-sm" id="admin-cancel">Cancel</button>
+    </div>
+
+    <div class="admin-field-row">
+      <label class="admin-field">Product ID
+        <input type="text" id="f-id" placeholder="kodak-gold-200">
+      </label>
+      <label class="admin-field">Category
+        <select id="f-category">
+          <option value="film">film</option>
+          <option value="disposable">disposable</option>
+          <option value="camera">camera</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="admin-field-row">
+      <label class="admin-field">Brand
+        <input type="text" id="f-brand" placeholder="Kodak">
+      </label>
+      <label class="admin-field">Name
+        <input type="text" id="f-name" placeholder="Gold 200">
+      </label>
+    </div>
+
+    <label class="admin-field">Tagline
+      <input type="text" id="f-tagline" placeholder="Classic warm golden tones">
+    </label>
+
+    <div class="admin-field-row admin-field-row-4">
+      <label class="admin-field">ISO
+        <input type="number" id="f-iso" placeholder="200">
+      </label>
+      <label class="admin-field">Format
+        <input type="text" id="f-format" placeholder="135">
+      </label>
+      <label class="admin-field">Type
+        <select id="f-type">
+          <option value="Color">Color</option>
+          <option value="B&W">B&amp;W</option>
+          <option value="Camera">Camera</option>
+        </select>
+      </label>
+      <label class="admin-field">Shots
+        <input type="number" id="f-shots" placeholder="36">
+      </label>
+    </div>
+
+    <div class="admin-field-row admin-field-row-3">
+      <label class="admin-field">Price
+        <input type="number" step="0.01" id="f-price" placeholder="59.00">
+      </label>
+      <label class="admin-field">Currency
+        <input type="text" id="f-currency" placeholder="RM">
+      </label>
+      <label class="admin-field">Stock
+        <select id="f-stock">
+          <option value="in-stock">in-stock</option>
+          <option value="sold-out">sold-out</option>
+        </select>
+      </label>
+    </div>
+
+    <label class="admin-field">Main image
+      <div class="admin-image-field">
+        <input type="text" id="f-image" placeholder="images/products/kodak-gold-200.jpg">
+        <label class="btn btn-secondary btn-sm admin-upload-btn">Upload<input type="file" accept="image/*" hidden></label>
+      </div>
+    </label>
+
+    <div class="admin-field">
+      Sample photos
+      <div id="f-sampleimages-rows"></div>
+      <button type="button" class="btn btn-secondary btn-sm" id="admin-sample-add">+ Add photo</button>
+    </div>
+
+    <label class="admin-field">Description / Look
+      <textarea id="f-description" rows="4" placeholder="Warm, slightly saturated colour with a nostalgic golden cast..."></textarea>
+    </label>
+
+    <div class="admin-field">
+      Colour variants <span class="muted">(only for products sold in multiple colours, like EC35 — leave empty otherwise)</span>
+      <div class="admin-variant-head">
+        <span>Colour</span><span>Image path</span><span>Stock</span><span></span>
+      </div>
+      <div id="f-variants-rows"></div>
+      <button type="button" class="btn btn-secondary btn-sm" id="admin-variant-add">+ Add colour</button>
+    </div>
+
+    <label class="admin-field">About <span class="muted">(longer camera/product story — optional)</span>
+      <textarea id="f-about" rows="3" placeholder="The KODAK EC35 is a beginner-friendly point-and-shoot camera..."></textarea>
+    </label>
+
+    <div class="admin-field">
+      Features <span class="muted">(optional — highlight cards shown on the product page)</span>
+      <div id="f-features-rows"></div>
+      <button type="button" class="btn btn-secondary btn-sm" id="admin-feature-add">+ Add feature</button>
+    </div>
+
+    <details class="admin-advanced">
+      <summary>Advanced fields (JSON)</summary>
+      <p class="muted" style="font-size:0.8125rem;">For anything the form above still doesn't cover. Anything here is merged in as-is on save.</p>
+      <textarea class="admin-json" id="f-extra" spellcheck="false" rows="8">{}</textarea>
+    </details>
+
+    <p class="admin-error" id="admin-error" hidden></p>
+    <button class="btn btn-primary" id="admin-save">Save</button>
+  </div>
+</div>
+
+<footer class="site-footer container">
+  <div class="footer-cols">
+    <div>
+      <strong>Filmlab04</strong>
+      <p>Film Lab 04 offers professional film processing, scanning, and support for film photography lovers, preserving the unique charm of analog photography.</p>
+    </div>
+    <div>
+      <a href="services.html">Services</a><br>
+      <a href="blog.html">Blog</a><br>
+      <a href="shop.html">Shop</a>
+    </div>
+  </div>
+</footer>
+
+<script src="js/cart.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
