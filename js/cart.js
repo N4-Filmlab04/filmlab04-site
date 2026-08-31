@@ -1,10 +1,7 @@
 /**
- * filmlab04 cart — front-end demo only.
- * Cart state lives in localStorage. There is no backend, no real payment,
- * and no real courier integration: checkout generates a fake order number
- * and tracking code so the flow feels complete for demo purposes. When
- * this goes live for real orders, swap `mockCheckout()` for a real
- * payment/shipping integration and keep the rest of the UI as-is.
+ * filmlab04 cart — cart state lives in localStorage. The actual checkout
+ * flow (customer details, order submission, payment instructions) is in
+ * js/checkout.js.
  */
 
 const CART_KEY = 'filmlab04_cart';
@@ -145,18 +142,6 @@ function showToast(message) {
   toast.classList.add('show');
   clearTimeout(toast._t);
   toast._t = setTimeout(() => toast.classList.remove('show'), 1800);
-}
-
-/** Fake order + tracking number. Replace with a real courier API response
- *  once filmlab04 has an actual shipping integration. */
-function mockCheckout() {
-  const cart = getCart();
-  if (cart.length === 0) return null;
-  const orderId = 'FL04-' + Math.random().toString(36).slice(2, 8).toUpperCase();
-  const trackingId = 'TRK' + Date.now().toString().slice(-9);
-  localStorage.setItem(CART_KEY, '[]');
-  renderCartBadge();
-  return { orderId, trackingId };
 }
 
 document.addEventListener('DOMContentLoaded', () => {

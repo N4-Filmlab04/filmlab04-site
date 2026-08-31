@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Your cart — Filmlab04</title>
-<link rel="icon" type="image/png" href="images/favicon.png">
+<link rel="icon" type="image/png" href="images/favicon.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
@@ -28,21 +28,53 @@
 
 <div class="container" style="max-width:640px; padding: 48px 0;">
   <h1>Your cart</h1>
-  <p class="muted" style="margin-bottom:32px;">Demo checkout — no real payment is taken. This is a prototype flow for Filmlab04.</p>
+  <p class="muted" style="margin-bottom:32px;">FPX bank transfer or DuitNow QR — pay directly, no card needed.</p>
 
-  <div id="page-cart-items"></div>
+  <div id="step-cart">
+    <div id="page-cart-items"></div>
 
-  <div id="page-cart-summary" style="margin-top:24px; padding-top:24px; border-top:1px solid var(--line);">
-    <div class="cart-subtotal" style="font-size:1.125rem;"><span>Subtotal</span><span class="amount">RM0.00</span></div>
-    <button class="btn btn-primary btn-block" id="checkout-btn" style="margin-top:16px;">Checkout</button>
+    <div id="page-cart-summary" style="margin-top:24px; padding-top:24px; border-top:1px solid var(--line);">
+      <div class="cart-subtotal" style="font-size:1.125rem;"><span>Subtotal</span><span class="amount">RM0.00</span></div>
+      <button class="btn btn-primary btn-block" id="to-details-btn" style="margin-top:16px;">Continue to checkout</button>
+    </div>
   </div>
 
-  <div id="order-confirmation" style="display:none; text-align:center; padding: 48px 0;">
+  <div id="step-details" style="display:none;">
+    <h2>Your details</h2>
+    <label class="form-field">Full Name
+      <input type="text" id="co-name" placeholder="Your full name" autocomplete="name" required>
+    </label>
+    <label class="form-field">Phone Number
+      <input type="tel" id="co-phone" placeholder="+60123456789" autocomplete="tel" inputmode="tel" required>
+    </label>
+    <label class="form-field">Email Address
+      <input type="email" id="co-email" placeholder="example@gmail.com" autocomplete="email" required>
+    </label>
+    <label class="form-field">Notes <span class="muted">(optional)</span>
+      <textarea id="co-notes" rows="2" placeholder="Anything we should know..."></textarea>
+    </label>
+    <p class="form-error" id="co-error" hidden></p>
+    <button class="btn btn-primary btn-block" id="place-order-btn">Place order</button>
+  </div>
+
+  <div id="step-payment" style="display:none; text-align:center; padding: 24px 0;">
     <h2>Order placed 🎉</h2>
-    <p>This is a demo confirmation — no real payment or courier was involved.</p>
-    <p><strong>Order ID:</strong> <span id="conf-order-id"></span></p>
-    <p><strong>Tracking number:</strong> <span id="conf-tracking-id"></span></p>
-    <a href="shop.html" class="btn btn-secondary">Continue shopping</a>
+    <p><strong>Order ID:</strong> <span id="pay-order-id"></span> — <strong>RM<span id="pay-amount"></span></strong> due</p>
+
+    <div class="notice" style="text-align:left; max-width:360px; margin:16px auto;">
+      <strong>How to pay</strong>
+      <p>Scan the QR code or transfer to the bank account below, then keep your receipt. We'll contact you via WhatsApp once payment is confirmed.</p>
+    </div>
+
+    <div id="payment-qr-box" style="max-width:220px; margin:16px auto; border-radius: var(--radius-card); overflow:hidden; box-shadow: var(--shadow-soft);"></div>
+
+    <div class="receipt-box" style="text-align:left; max-width:360px; margin:16px auto;">
+      <div class="receipt-row"><span>Bank</span><strong id="pay-bank">—</strong></div>
+      <div class="receipt-row"><span>Account No.</span><strong id="pay-account">—</strong></div>
+      <div class="receipt-row"><span>Account Name</span><strong id="pay-holder">—</strong></div>
+    </div>
+
+    <a href="shop.html" class="btn btn-secondary" style="margin-top:16px;">Continue shopping</a>
   </div>
 </div>
 
@@ -61,6 +93,7 @@
 </footer>
 
 <script src="js/cart.js"></script>
+<script src="js/checkout.js"></script>
 <script>
   async function renderPageCart() {
     const container = document.getElementById('page-cart-items');
@@ -98,16 +131,6 @@
     }).join('');
     document.querySelector('#page-cart-summary .amount').textContent = `RM${subtotal.toFixed(2)}`;
   }
-
-  document.getElementById('checkout-btn').addEventListener('click', () => {
-    const result = mockCheckout();
-    if (!result) return;
-    document.getElementById('page-cart-items').style.display = 'none';
-    document.getElementById('page-cart-summary').style.display = 'none';
-    document.getElementById('order-confirmation').style.display = 'block';
-    document.getElementById('conf-order-id').textContent = result.orderId;
-    document.getElementById('conf-tracking-id').textContent = result.trackingId;
-  });
 
   document.addEventListener('DOMContentLoaded', renderPageCart);
 </script>
