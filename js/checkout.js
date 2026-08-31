@@ -5,8 +5,7 @@
  * cart.js for getCart/loadProducts/escapeHtml/showToast/CART_KEY.
  */
 
-// Paste the deployed apps-script/order-handler.gs /exec URL here once it's live.
-const ORDER_ENDPOINT = '';
+const ORDER_ENDPOINT = 'https://script.google.com/macros/s/AKfycbybjY0Tk13wPQ8T5aKDWz-xpEQpf_7OATxhBEwdjS404sXHUrXMXhCA1WcAgkWhKJiG_A/exec';
 
 const PAYMENT_INFO = {
   qrImage: 'images/payment-qr.jpg', // DuitNow QR — N4 Camera x Alor Setar
