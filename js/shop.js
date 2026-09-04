@@ -55,6 +55,10 @@ function applyFilter(products, filter) {
 }
 
 async function renderShop() {
+  // Guards on .shop-toolbar (not .product-grid) since index.html's featured
+  // grid also uses the .product-grid class for layout, via productCard()
+  // directly, without the full filter/sort shop page around it.
+  if (!document.querySelector('.shop-toolbar')) return;
   const grid = document.querySelector('.product-grid');
   if (!grid) return;
   const products = await loadProducts();

@@ -94,21 +94,10 @@
 </footer>
 
 <script src="js/cart.js"></script>
+<script src="js/shop.js"></script>
 <script>
   loadProducts().then(products => {
-    document.getElementById('featured-grid').innerHTML =
-      products.slice(0, 4).map(p => `
-        <article class="product-card">
-          <a href="product.html?id=${p.id}" class="product-card-img">${p.image ? `<img src="${p.image}">` : 'photo coming soon'}</a>
-          <div class="product-card-body">
-            <div class="product-brand">${p.brand}</div>
-            <a href="product.html?id=${p.id}"><h3 class="product-name">${p.name}</h3></a>
-            <div class="product-card-footer">
-              <span class="product-price">${p.currency}${p.price.toFixed(2)}</span>
-              <button class="btn btn-primary btn-sm" onclick="addToCart('${p.id}')">Add</button>
-            </div>
-          </div>
-        </article>`).join('');
+    document.getElementById('featured-grid').innerHTML = products.slice(0, 4).map(productCard).join('');
   });
 </script>
 </body>
