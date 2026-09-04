@@ -6,6 +6,11 @@
 
 const CART_KEY = 'filmlab04_cart';
 
+// Product catalog now lives in the "Filmlab04 Products" Google Sheet, read
+// through this Apps Script Web App (see apps-script/admin-api.gs) so stock
+// changes made in admin.html go live instantly, no git push needed.
+const PRODUCTS_ENDPOINT = '';
+
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -65,7 +70,7 @@ function cartCount(cart = getCart()) {
 
 async function loadProducts() {
   if (window.__filmlab04Products) return window.__filmlab04Products;
-  const res = await fetch('data/products.json');
+  const res = await fetch(PRODUCTS_ENDPOINT ? `${PRODUCTS_ENDPOINT}?action=products` : 'data/products.json');
   window.__filmlab04Products = await res.json();
   return window.__filmlab04Products;
 }

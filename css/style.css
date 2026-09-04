@@ -420,7 +420,26 @@ a:hover { color: var(--accent); }
 .compare-table td { font-size: 0.9375rem; }
 
 /* Admin page */
-.admin-toolbar { margin: var(--space-6) 0; }
+.admin-toolbar { margin: var(--space-6) 0; display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.admin-gate {
+  margin-top: var(--space-6);
+  padding: var(--space-6);
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+  max-width: 360px;
+}
+.admin-gate #admin-signin-btn { margin-top: var(--space-4); }
+.admin-sales-stats { display: flex; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-4); }
+.admin-sales-stat {
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+  min-width: 180px;
+}
+.admin-sales-stat span { display: block; font-size: 0.8125rem; color: var(--ink-soft); margin-bottom: var(--space-1); }
+.admin-sales-stat strong { font-size: 1.375rem; font-family: 'Poppins', sans-serif; }
 .admin-table-scroll { overflow-x: auto; }
 .admin-table {
   width: 100%;

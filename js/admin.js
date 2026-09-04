@@ -1,9 +1,21 @@
-/** Product CRUD for admin.html. Reads/writes data/products.json via server.py's
- * /api/products endpoint — only works while server.py is running. Depends on
- * cart.js for showToast(). */
+/** Product CRUD + sales overview for admin.html. Talks to the "Filmlab04
+ * Products" Apps Script Web App (apps-script/admin-api.gs) — reads/writes
+ * the live Google Sheet product catalog and reads order data for the sales
+ * summary. Gated behind Google Sign-In; only emails on the backend's
+ * ALLOWED_EMAILS list can actually save/upload/view sales.
+ * Depends on cart.js for showToast()/escapeHtml(). */
+
+// Same Apps Script /exec URL as PRODUCTS_ENDPOINT in js/cart.js.
+const ADMIN_ENDPOINT = '';
+
+// OAuth Client ID from Google Cloud Console — must match GOOGLE_CLIENT_ID
+// in apps-script/admin-api.gs.
+const GOOGLE_CLIENT_ID = '';
 
 let __adminProducts = [];
 let __editingId = null; // null while adding a new product
+let __idToken = null;
+let __userEmail = null;
 
 // Fields covered by the form. Anything else on a product round-trips
 // through the "Advanced fields" JSON box.
@@ -17,31 +29,40 @@ function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-async function uploadImage(file) {
-  const res = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function adminPost(payload) {
+  const res = await fetch(ADMIN_ENDPOINT, {
     method: 'POST',
-    body: file
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ ...payload, idToken: __idToken })
   });
   const body = await res.json();
-  if (!res.ok) throw new Error(body.error || 'Upload failed');
-  return body.path;
+  if (body.error) throw new Error(body.error === 'Not authorized' ? '登入已过期或没有权限，请重新登入。' : body.error);
+  return body;
+}
+
+async function uploadImage(file) {
+  const dataBase64 = await fileToBase64(file);
+  const body = await adminPost({ action: 'upload-image', filename: file.name, mimeType: file.type, dataBase64 });
+  return body.url;
 }
 
 async function fetchProducts() {
-  const res = await fetch('/api/products');
-  if (!res.ok) throw new Error('Could not load products.json');
+  const res = await fetch(`${ADMIN_ENDPOINT}?action=products`);
+  if (!res.ok) throw new Error('Could not load products');
   return res.json();
 }
 
 async function saveAllProducts(products) {
-  const res = await fetch('/api/products', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(products)
-  });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.error || 'Save failed');
-  return body;
+  return adminPost({ action: 'save-all', products });
 }
 
 function adminRow(p) {
@@ -318,16 +339,128 @@ async function saveEditor() {
   }
 }
 
-async function initAdmin() {
-  const wrap = document.querySelector('.admin-table-wrap');
+async function importFromStaticJson() {
+  if (!confirm('这会用 data/products.json 目前的内容覆盖 Google Sheet 里的资料，确定吗？')) return;
+  try {
+    const res = await fetch('data/products.json');
+    const products = await res.json();
+    await saveAllProducts(products);
+    __adminProducts = products;
+    renderAdminTable();
+    showToast('已汇入');
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+function formatDateTime(value) {
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return String(value || '—');
+  return d.toLocaleString('zh-MY', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+async function loadSales() {
+  const wrap = document.getElementById('admin-sales-wrap');
   if (!wrap) return;
+  wrap.innerHTML = '<p class="muted">载入中...</p>';
+  try {
+    const res = await fetch(`${ADMIN_ENDPOINT}?action=sales&idToken=${encodeURIComponent(__idToken)}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    wrap.innerHTML = `
+      <div class="admin-sales-stats">
+        <div class="admin-sales-stat"><span>订单总数</span><strong>${data.totalOrders}</strong></div>
+        <div class="admin-sales-stat"><span>订单总额（含未确认付款）</span><strong>RM${data.totalRevenue.toFixed(2)}</strong></div>
+      </div>
+      <div class="admin-table-scroll">
+        <table class="admin-table">
+          <thead><tr><th>订单编号</th><th>时间</th><th>客人</th><th>电话</th><th>品项</th><th>金额</th><th>状态</th></tr></thead>
+          <tbody>${data.recentOrders.map(o => `
+            <tr>
+              <td>${escapeHtml(o.orderId)}</td>
+              <td>${escapeHtml(formatDateTime(o.submittedAt))}</td>
+              <td>${escapeHtml(o.name)}</td>
+              <td>${escapeHtml(o.phone)}</td>
+              <td>${escapeHtml(o.items)}</td>
+              <td>RM${Number(o.subtotal).toFixed(2)}</td>
+              <td>${escapeHtml(o.paymentStatus)}</td>
+            </tr>`).join('') || '<tr><td colspan="7" class="muted">还没有订单</td></tr>'}</tbody>
+        </table>
+      </div>`;
+  } catch (err) {
+    wrap.innerHTML = `<p class="admin-error">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+async function loadAdminApp() {
+  const wrap = document.querySelector('.admin-table-wrap');
   try {
     __adminProducts = await fetchProducts();
   } catch (err) {
-    wrap.innerHTML = `<p class="admin-error">${err.message} — make sure you're running <code>python3 server.py</code>, not the plain http.server.</p>`;
+    wrap.innerHTML = `<p class="admin-error">${escapeHtml(err.message)}</p>`;
     return;
   }
   renderAdminTable();
+  loadSales();
+}
+
+function showSignedIn(email) {
+  document.getElementById('admin-gate').hidden = true;
+  document.getElementById('admin-app').hidden = false;
+  document.getElementById('admin-user-email').textContent = email;
+  loadAdminApp();
+}
+
+function showGateError(message) {
+  const el = document.getElementById('admin-gate-error');
+  el.textContent = message;
+  el.hidden = !message;
+}
+
+async function handleCredentialResponse(response) {
+  __idToken = response.credential;
+  showGateError('');
+  try {
+    const res = await fetch(`${ADMIN_ENDPOINT}?action=whoami&idToken=${encodeURIComponent(__idToken)}`);
+    const data = await res.json();
+    if (!data.authorized) {
+      __idToken = null;
+      showGateError('这个 Google 帐号没有权限进入 admin。');
+      return;
+    }
+    __userEmail = data.email;
+    showSignedIn(data.email);
+  } catch (err) {
+    showGateError('无法验证登入，请检查网路连线后重试。');
+  }
+}
+
+function signOut() {
+  __idToken = null;
+  __userEmail = null;
+  document.getElementById('admin-app').hidden = true;
+  document.getElementById('admin-gate').hidden = false;
+  if (window.google?.accounts?.id) google.accounts.id.disableAutoSelect();
+}
+
+function initAdmin() {
+  const wrap = document.querySelector('.admin-table-wrap');
+  if (!wrap) return;
+
+  if (!ADMIN_ENDPOINT || !GOOGLE_CLIENT_ID) {
+    document.querySelector('.container').insertAdjacentHTML('afterbegin',
+      '<p class="admin-error">ADMIN_ENDPOINT / GOOGLE_CLIENT_ID 还没设定 — 编辑 js/admin.js 顶部填入。</p>');
+    return;
+  }
+
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleCredentialResponse
+  });
+  google.accounts.id.renderButton(document.getElementById('admin-signin-btn'), { theme: 'outline', size: 'large' });
+
+  document.getElementById('admin-signout')?.addEventListener('click', signOut);
+  document.getElementById('admin-import-json')?.addEventListener('click', importFromStaticJson);
 
   document.getElementById('admin-new').addEventListener('click', () => openEditor(null));
   document.getElementById('admin-cancel').addEventListener('click', closeEditor);
@@ -375,4 +508,8 @@ async function initAdmin() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', initAdmin);
+document.addEventListener('DOMContentLoaded', () => {
+  // google.accounts.id needs the GIS script (loaded async) to have run first.
+  if (window.google?.accounts?.id) initAdmin();
+  else window.addEventListener('load', initAdmin);
+});

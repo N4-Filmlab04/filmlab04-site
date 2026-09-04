@@ -5,7 +5,7 @@
  * bound to the "Filmlab04 Drop-offs" Google Sheet, which appends each one as a row.
  */
 
-const DROPOFF_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxwl5r__2WczFs4weCHjFzUDmgHx2LAECi9yAo-ngMNZPKqvvRM8SmRVqm3J7Q4fdOJyQ/exec';
+const DROPOFF_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzo9trOi84dJ3J6PxSZqL98GcAiAR2jOO7d0cgNfst9jpimndl4Adw8peDOfiEktYXM2w/exec';
 
 function formatDropoffDate(d) {
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',

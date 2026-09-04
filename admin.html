@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -29,15 +30,36 @@
 <div class="container" style="padding: 48px 0;">
   <header>
     <h1>Admin</h1>
-    <p>Manage the film catalog. Changes save straight to <code>data/products.json</code> — this only works while <code>server.py</code> is running, and this page has no login, so keep it to your own machine.</p>
-    <p class="muted" style="font-size:0.875rem;">Required fields: Product ID, Brand, Name, Price, Currency, Stock, Category.</p>
+    <p>Manage the film catalog and view sales — changes save straight to the live Google Sheet, so they show up on the site immediately.</p>
   </header>
 
-  <div class="admin-toolbar">
-    <button class="btn btn-primary btn-sm" id="admin-new">+ New product</button>
+  <div class="admin-gate" id="admin-gate">
+    <p>请用授权的 Google 帐号登入。</p>
+    <div id="admin-signin-btn"></div>
+    <p class="admin-error" id="admin-gate-error" hidden></p>
   </div>
 
-  <div class="admin-table-wrap"></div>
+  <div id="admin-app" hidden>
+    <div class="admin-toolbar">
+      <span class="muted" style="font-size:0.875rem;">已登入：<strong id="admin-user-email"></strong></span>
+      <button class="btn btn-secondary btn-sm" id="admin-signout">登出</button>
+    </div>
+
+    <section class="section" style="padding-top:24px;">
+      <h2>销售总览</h2>
+      <div id="admin-sales-wrap"></div>
+    </section>
+
+    <section class="section" style="padding-top:24px;">
+      <div class="admin-toolbar">
+        <h2 style="margin:0;">商品目录</h2>
+        <button class="btn btn-primary btn-sm" id="admin-new">+ New product</button>
+        <button class="btn btn-secondary btn-sm" id="admin-import-json">从 data/products.json 汇入</button>
+      </div>
+      <p class="muted" style="font-size:0.875rem;">Required fields: Product ID, Brand, Name, Price, Currency, Stock, Category.</p>
+
+      <div class="admin-table-wrap"></div>
+    </section>
 
   <div class="admin-editor" id="admin-editor" hidden>
     <div class="admin-editor-head">
@@ -149,6 +171,7 @@
 
     <p class="admin-error" id="admin-error" hidden></p>
     <button class="btn btn-primary" id="admin-save">Save</button>
+  </div>
   </div>
 </div>
 
