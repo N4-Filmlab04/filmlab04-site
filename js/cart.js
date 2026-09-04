@@ -9,7 +9,7 @@ const CART_KEY = 'filmlab04_cart';
 // Product catalog now lives in the "Filmlab04 Products" Google Sheet, read
 // through this Apps Script Web App (see apps-script/admin-api.gs) so stock
 // changes made in admin.html go live instantly, no git push needed.
-const PRODUCTS_ENDPOINT = '';
+const PRODUCTS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyEuFDv68Pf5WUBqOYNPqiOL4BNgFyMsGCN2fXEgp7zTSh4MedmswBra5FYs1nD7W_c1Q/exec';
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, c => ({

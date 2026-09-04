@@ -6,11 +6,11 @@
  * Depends on cart.js for showToast()/escapeHtml(). */
 
 // Same Apps Script /exec URL as PRODUCTS_ENDPOINT in js/cart.js.
-const ADMIN_ENDPOINT = '';
+const ADMIN_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyEuFDv68Pf5WUBqOYNPqiOL4BNgFyMsGCN2fXEgp7zTSh4MedmswBra5FYs1nD7W_c1Q/exec';
 
 // OAuth Client ID from Google Cloud Console — must match GOOGLE_CLIENT_ID
 // in apps-script/admin-api.gs.
-const GOOGLE_CLIENT_ID = '';
+const GOOGLE_CLIENT_ID = '36912991192-drhj1aqehd4q9m9al25qil87kk43kmri.apps.googleusercontent.com';
 
 let __adminProducts = [];
 let __editingId = null; // null while adding a new product
