@@ -56,6 +56,18 @@
         <button class="btn btn-primary btn-sm" id="admin-new">+ New product</button>
         <button class="btn btn-secondary btn-sm" id="admin-import-json">从 data/products.json 汇入</button>
       </div>
+
+      <div class="admin-modal-overlay" id="admin-new-modal" hidden>
+        <div class="admin-modal">
+          <h3 class="mt-0">新增产品</h3>
+          <p class="muted">这个产品只有一款，还是有多种颜色／款式？</p>
+          <div class="admin-modal-options">
+            <button type="button" class="btn btn-secondary" id="admin-new-single">单一款式</button>
+            <button type="button" class="btn btn-secondary" id="admin-new-multi">多种颜色／款式</button>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="admin-new-modal-cancel">取消</button>
+        </div>
+      </div>
       <p class="muted" style="font-size:0.875rem;">Required fields: Product ID, Brand, Name, Price, Currency, Stock, Category.</p>
 
       <div class="admin-table-wrap"></div>
@@ -144,8 +156,8 @@
       <textarea id="f-description" rows="4" placeholder="Warm, slightly saturated colour with a nostalgic golden cast..."></textarea>
     </label>
 
-    <div class="admin-field">
-      Colour variants <span class="muted">(only for products sold in multiple colours, like EC35 — leave empty otherwise)</span>
+    <div class="admin-field" id="f-variants-section">
+      Colour variants <span class="muted">(this product has multiple colours/styles)</span>
       <div class="admin-variant-head">
         <span>Colour</span><span>Image path</span><span>Stock</span><span></span>
       </div>

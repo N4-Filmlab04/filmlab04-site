@@ -269,10 +269,21 @@ function readForm() {
   return { ...product, ...extra };
 }
 
-function openEditor(product) {
+function setVariantsMode(mode, product) {
+  document.getElementById('f-variants-section').hidden = mode !== 'multi';
+  if (mode === 'multi' && !(product && product.variants && product.variants.length)) {
+    renderVariantRows([{}, {}]);
+  }
+}
+
+function openEditor(product, mode) {
   __editingId = product ? product.id : null;
+  const resolvedMode = product
+    ? (Array.isArray(product.variants) && product.variants.length ? 'multi' : 'single')
+    : (mode || 'single');
   document.getElementById('admin-editor-title').textContent = product ? `Edit ${product.name}` : 'New product';
   fillForm(product);
+  setVariantsMode(resolvedMode, product);
   showAdminError('');
   document.getElementById('admin-editor').hidden = false;
   document.getElementById('admin-editor').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -317,6 +328,12 @@ async function saveEditor() {
     showAdminError(`Missing required field(s): ${missing.join(', ')}`);
     return;
   }
+  const variantsShown = !document.getElementById('f-variants-section').hidden;
+  if (variantsShown && !(parsed.variants && parsed.variants.length)) {
+    showAdminError('请至少新增一个颜色/款式，或取消编辑重新选择「单一款式」。');
+    return;
+  }
+
   const isNew = __editingId === null;
   const idTaken = __adminProducts.some(p => p.id === parsed.id && p.id !== __editingId);
   if (idTaken) {
@@ -462,7 +479,20 @@ function initAdmin() {
   document.getElementById('admin-signout')?.addEventListener('click', signOut);
   document.getElementById('admin-import-json')?.addEventListener('click', importFromStaticJson);
 
-  document.getElementById('admin-new').addEventListener('click', () => openEditor(null));
+  document.getElementById('admin-new').addEventListener('click', () => {
+    document.getElementById('admin-new-modal').hidden = false;
+  });
+  document.getElementById('admin-new-modal-cancel').addEventListener('click', () => {
+    document.getElementById('admin-new-modal').hidden = true;
+  });
+  document.getElementById('admin-new-single').addEventListener('click', () => {
+    document.getElementById('admin-new-modal').hidden = true;
+    openEditor(null, 'single');
+  });
+  document.getElementById('admin-new-multi').addEventListener('click', () => {
+    document.getElementById('admin-new-modal').hidden = true;
+    openEditor(null, 'multi');
+  });
   document.getElementById('admin-cancel').addEventListener('click', closeEditor);
   document.getElementById('admin-save').addEventListener('click', saveEditor);
   document.getElementById('admin-variant-add').addEventListener('click', () => {
