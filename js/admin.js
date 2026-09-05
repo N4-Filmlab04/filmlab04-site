@@ -1,4 +1,4 @@
-/** Product CRUD + sales overview for admin.html. Talks to the "Filmlab04
+/** Product CRUD (admin.html) + sales overview (admin-sales.html). Talks to the "Filmlab04
  * Products" Apps Script Web App (apps-script/admin-api.gs) — reads/writes
  * the live Google Sheet product catalog and reads order data for the sales
  * summary. Gated behind Google Sign-In; only emails on the backend's
@@ -409,8 +409,9 @@ async function loadSales() {
   }
 }
 
-async function loadAdminApp() {
+async function loadProductsSection() {
   const wrap = document.querySelector('.admin-table-wrap');
+  if (!wrap) return;
   try {
     __adminProducts = await fetchProducts();
   } catch (err) {
@@ -418,6 +419,10 @@ async function loadAdminApp() {
     return;
   }
   renderAdminTable();
+}
+
+async function loadAdminApp() {
+  loadProductsSection();
   loadSales();
 }
 
@@ -461,8 +466,7 @@ function signOut() {
 }
 
 function initAdmin() {
-  const wrap = document.querySelector('.admin-table-wrap');
-  if (!wrap) return;
+  if (!document.getElementById('admin-gate')) return;
 
   if (!ADMIN_ENDPOINT || !GOOGLE_CLIENT_ID) {
     document.querySelector('.container').insertAdjacentHTML('afterbegin',
@@ -479,63 +483,67 @@ function initAdmin() {
   document.getElementById('admin-signout')?.addEventListener('click', signOut);
   document.getElementById('admin-import-json')?.addEventListener('click', importFromStaticJson);
 
-  document.getElementById('admin-new').addEventListener('click', () => {
-    document.getElementById('admin-new-modal').hidden = false;
-  });
-  document.getElementById('admin-new-modal-cancel').addEventListener('click', () => {
-    document.getElementById('admin-new-modal').hidden = true;
-  });
-  document.getElementById('admin-new-single').addEventListener('click', () => {
-    document.getElementById('admin-new-modal').hidden = true;
-    openEditor(null, 'single');
-  });
-  document.getElementById('admin-new-multi').addEventListener('click', () => {
-    document.getElementById('admin-new-modal').hidden = true;
-    openEditor(null, 'multi');
-  });
-  document.getElementById('admin-cancel').addEventListener('click', closeEditor);
-  document.getElementById('admin-save').addEventListener('click', saveEditor);
-  document.getElementById('admin-variant-add').addEventListener('click', () => {
-    document.getElementById('f-variants-rows').insertAdjacentHTML('beforeend', variantRow());
-  });
-  document.getElementById('f-variants-rows').addEventListener('click', (e) => {
-    if (e.target.classList.contains('admin-variant-remove')) {
-      e.target.closest('.admin-variant-row').remove();
-    }
-  });
-  document.getElementById('admin-sample-add').addEventListener('click', () => {
-    document.getElementById('f-sampleimages-rows').insertAdjacentHTML('beforeend', sampleRow());
-  });
-  document.getElementById('f-sampleimages-rows').addEventListener('click', (e) => {
-    if (e.target.classList.contains('admin-sample-remove')) {
-      e.target.closest('.admin-sample-row').remove();
-    }
-  });
-  document.getElementById('admin-feature-add').addEventListener('click', () => {
-    document.getElementById('f-features-rows').insertAdjacentHTML('beforeend', featureRow());
-  });
-  document.getElementById('f-features-rows').addEventListener('click', (e) => {
-    if (e.target.classList.contains('admin-feature-remove')) {
-      e.target.closest('.admin-feature-row').remove();
-    }
-  });
-  document.getElementById('admin-editor').addEventListener('change', async (e) => {
-    if (e.target.type !== 'file') return;
-    const fileInput = e.target;
-    const file = fileInput.files[0];
-    if (!file) return;
-    const textInput = fileInput.closest('.admin-image-field').querySelector('input[type=text]');
-    fileInput.disabled = true;
-    try {
-      textInput.value = await uploadImage(file);
-      showToast('Image uploaded');
-    } catch (err) {
-      showAdminError(err.message);
-    } finally {
-      fileInput.disabled = false;
-      fileInput.value = '';
-    }
-  });
+  // The product-editor UI only exists on admin.html (admin-sales.html only
+  // shows the sales overview), so skip wiring it up if it's not on this page.
+  if (document.getElementById('admin-editor')) {
+    document.getElementById('admin-new').addEventListener('click', () => {
+      document.getElementById('admin-new-modal').hidden = false;
+    });
+    document.getElementById('admin-new-modal-cancel').addEventListener('click', () => {
+      document.getElementById('admin-new-modal').hidden = true;
+    });
+    document.getElementById('admin-new-single').addEventListener('click', () => {
+      document.getElementById('admin-new-modal').hidden = true;
+      openEditor(null, 'single');
+    });
+    document.getElementById('admin-new-multi').addEventListener('click', () => {
+      document.getElementById('admin-new-modal').hidden = true;
+      openEditor(null, 'multi');
+    });
+    document.getElementById('admin-cancel').addEventListener('click', closeEditor);
+    document.getElementById('admin-save').addEventListener('click', saveEditor);
+    document.getElementById('admin-variant-add').addEventListener('click', () => {
+      document.getElementById('f-variants-rows').insertAdjacentHTML('beforeend', variantRow());
+    });
+    document.getElementById('f-variants-rows').addEventListener('click', (e) => {
+      if (e.target.classList.contains('admin-variant-remove')) {
+        e.target.closest('.admin-variant-row').remove();
+      }
+    });
+    document.getElementById('admin-sample-add').addEventListener('click', () => {
+      document.getElementById('f-sampleimages-rows').insertAdjacentHTML('beforeend', sampleRow());
+    });
+    document.getElementById('f-sampleimages-rows').addEventListener('click', (e) => {
+      if (e.target.classList.contains('admin-sample-remove')) {
+        e.target.closest('.admin-sample-row').remove();
+      }
+    });
+    document.getElementById('admin-feature-add').addEventListener('click', () => {
+      document.getElementById('f-features-rows').insertAdjacentHTML('beforeend', featureRow());
+    });
+    document.getElementById('f-features-rows').addEventListener('click', (e) => {
+      if (e.target.classList.contains('admin-feature-remove')) {
+        e.target.closest('.admin-feature-row').remove();
+      }
+    });
+    document.getElementById('admin-editor').addEventListener('change', async (e) => {
+      if (e.target.type !== 'file') return;
+      const fileInput = e.target;
+      const file = fileInput.files[0];
+      if (!file) return;
+      const textInput = fileInput.closest('.admin-image-field').querySelector('input[type=text]');
+      fileInput.disabled = true;
+      try {
+        textInput.value = await uploadImage(file);
+        showToast('Image uploaded');
+      } catch (err) {
+        showAdminError(err.message);
+      } finally {
+        fileInput.disabled = false;
+        fileInput.value = '';
+      }
+    });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

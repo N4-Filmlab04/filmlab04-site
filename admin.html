@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin — Filmlab04</title>
+<title>Admin · 商品目录 — Filmlab04</title>
 <link rel="icon" type="image/png" href="images/favicon.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
@@ -30,7 +30,7 @@
 <div class="container" style="padding: 48px 0;">
   <header>
     <h1>Admin</h1>
-    <p>Manage the film catalog and view sales — changes save straight to the live Google Sheet, so they show up on the site immediately.</p>
+    <p>Manage the film catalog — changes save straight to the live Google Sheet, so they show up on the site immediately.</p>
   </header>
 
   <div class="admin-gate" id="admin-gate">
@@ -45,10 +45,10 @@
       <button class="btn btn-secondary btn-sm" id="admin-signout">登出</button>
     </div>
 
-    <section class="section" style="padding-top:24px;">
-      <h2>销售总览</h2>
-      <div id="admin-sales-wrap"></div>
-    </section>
+    <div class="admin-pages-nav">
+      <a href="admin-sales.html" class="btn btn-secondary btn-sm">销售总览</a>
+      <a href="admin.html" class="btn btn-primary btn-sm">商品目录</a>
+    </div>
 
     <section class="section" style="padding-top:24px;">
       <div class="admin-toolbar">

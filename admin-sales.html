@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · 销售总览 — Filmlab04</title>
+<link rel="icon" type="image/png" href="images/favicon.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><img src="images/logo-mark.png" alt="Filmlab04" style="height:28px; width:auto; display:block;"></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="services.html">Services</a></li>
+      <li><a href="blog.html">Blog</a></li>
+    </ul>
+    <a href="cart.html" class="nav-cart">
+      🛒<span class="nav-cart-badge">0</span>
+    </a>
+  </div>
+</nav>
+
+<div class="container" style="padding: 48px 0;">
+  <header>
+    <h1>Admin</h1>
+    <p>View recent orders and revenue — read directly from the live order sheet.</p>
+  </header>
+
+  <div class="admin-gate" id="admin-gate">
+    <p>请用授权的 Google 帐号登入。</p>
+    <div id="admin-signin-btn"></div>
+    <p class="admin-error" id="admin-gate-error" hidden></p>
+  </div>
+
+  <div id="admin-app" hidden>
+    <div class="admin-toolbar">
+      <span class="muted" style="font-size:0.875rem;">已登入：<strong id="admin-user-email"></strong></span>
+      <button class="btn btn-secondary btn-sm" id="admin-signout">登出</button>
+    </div>
+
+    <div class="admin-pages-nav">
+      <a href="admin-sales.html" class="btn btn-primary btn-sm">销售总览</a>
+      <a href="admin.html" class="btn btn-secondary btn-sm">商品目录</a>
+    </div>
+
+    <section class="section" style="padding-top:24px;">
+      <h2>销售总览</h2>
+      <div id="admin-sales-wrap"></div>
+    </section>
+  </div>
+</div>
+
+<footer class="site-footer container">
+  <div class="footer-cols">
+    <div>
+      <strong>Filmlab04</strong>
+      <p>Film Lab 04 offers professional film processing, scanning, and support for film photography lovers, preserving the unique charm of analog photography.</p>
+    </div>
+    <div>
+      <a href="services.html">Services</a><br>
+      <a href="blog.html">Blog</a><br>
+      <a href="shop.html">Shop</a>
+    </div>
+  </div>
+</footer>
+
+<script src="js/cart.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

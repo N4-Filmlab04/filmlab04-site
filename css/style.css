@@ -421,6 +421,7 @@ a:hover { color: var(--accent); }
 
 /* Admin page */
 .admin-toolbar { margin: var(--space-6) 0; display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.admin-pages-nav { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 .admin-gate {
   margin-top: var(--space-6);
   padding: var(--space-6);
