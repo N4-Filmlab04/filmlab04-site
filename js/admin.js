@@ -21,7 +21,7 @@ let __userEmail = null;
 // through the "Advanced fields" JSON box.
 const FORM_FIELDS = [
   'id', 'brand', 'name', 'tagline', 'iso', 'format', 'type', 'shots',
-  'price', 'currency', 'stock', 'image', 'sampleImages', 'description', 'category',
+  'price', 'currency', 'quantity', 'stock', 'image', 'sampleImages', 'description', 'category',
   'variants', 'about', 'features'
 ];
 
@@ -74,6 +74,7 @@ function adminRow(p) {
       <td>${escapeHtml(p.name)}</td>
       <td>${escapeHtml(p.category)}</td>
       <td>${p.currency}${Number(p.price).toFixed(2)}</td>
+      <td>${Number(p.quantity) || 0}</td>
       <td><span class="badge ${soldOut ? 'badge-sold-out' : 'badge-in-stock'}">${soldOut ? 'Sold out' : 'In stock'}</span></td>
       <td class="admin-row-actions">
         <button class="btn btn-secondary btn-sm" data-edit="${p.id}">Edit</button>
@@ -88,7 +89,7 @@ function renderAdminTable() {
     <div class="admin-table-scroll">
       <table class="admin-table">
         <thead>
-          <tr><th>ID</th><th>Brand</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th></th></tr>
+          <tr><th>ID</th><th>Brand</th><th>Name</th><th>Category</th><th>Price</th><th>Quantity</th><th>Stock</th><th></th></tr>
         </thead>
         <tbody>${__adminProducts.map(adminRow).join('')}</tbody>
       </table>
@@ -206,7 +207,7 @@ function fillForm(product) {
   document.getElementById('f-shots').value = p.shots ?? '';
   document.getElementById('f-price').value = p.price ?? '';
   document.getElementById('f-currency').value = p.currency || 'RM';
-  document.getElementById('f-stock').value = p.stock || 'in-stock';
+  document.getElementById('f-quantity').value = p.quantity ?? '';
   document.getElementById('f-category').value = p.category || 'film';
   document.getElementById('f-image').value = p.image || '';
   renderSampleRows(p.sampleImages || []);
@@ -244,7 +245,7 @@ function readForm() {
     shots: num('f-shots'),
     price: num('f-price'),
     currency: str('f-currency'),
-    stock: str('f-stock'),
+    quantity: num('f-quantity'),
     image: str('f-image'),
     sampleImages: readSampleImages(),
     description: str('f-description'),
@@ -253,6 +254,9 @@ function readForm() {
   Object.keys(product).forEach(key => {
     if (product[key] === undefined) delete product[key];
   });
+  if (typeof product.quantity === 'number') {
+    product.stock = product.quantity > 0 ? 'in-stock' : 'sold-out';
+  }
 
   const variants = readVariants();
   if (variants.length) product.variants = variants;
@@ -322,7 +326,7 @@ async function saveEditor() {
     return;
   }
 
-  const required = ['id', 'brand', 'name', 'price', 'currency', 'stock', 'category'];
+  const required = ['id', 'brand', 'name', 'price', 'currency', 'quantity', 'category'];
   const missing = required.filter(k => parsed[k] === undefined || parsed[k] === '');
   if (missing.length) {
     showAdminError(`Missing required field(s): ${missing.join(', ')}`);

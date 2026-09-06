@@ -3,14 +3,15 @@
  *
  * Bound to a Google Sheet ("Filmlab04 Products"), one row per product in
  * its first tab:
- *   ID | Brand | Name | Category | Price | Currency | Stock | Data (JSON)
+ *   ID | Brand | Name | Category | Price | Currency | Quantity | Data (JSON)
  *
- * The Stock column is the live source of truth for that product's
- * top-level stock — you can flip in-stock/sold-out directly in the Sheet
- * cell and it takes effect immediately, no admin.html needed. Everything
- * else (tagline, image, colour variants, sample photos, features, etc.)
- * lives in the Data column as JSON and is meant to be edited through
- * admin.html, not by hand.
+ * The Quantity column is the live source of truth for that product's
+ * top-level stock — you can type a number directly in the Sheet cell and
+ * it takes effect immediately, no admin.html needed. In-stock/sold-out is
+ * always derived from it (quantity > 0 = in-stock, 0 = sold-out), never
+ * stored separately. Everything else (tagline, image, colour variants,
+ * sample photos, features, etc.) lives in the Data column as JSON and is
+ * meant to be edited through admin.html, not by hand.
  *
  * doGet ?action=products      — public, no login. Returns the full catalog
  *                                as JSON (this is what shop.html/product.html
@@ -48,7 +49,7 @@ const GOOGLE_CLIENT_ID = 'PASTE_YOUR_OAUTH_CLIENT_ID_HERE';
 // docs.google.com/spreadsheets/d/THIS_PART/edit).
 const ORDERS_SHEET_ID = 'PASTE_FILMLAB04_ORDERS_SHEET_ID_HERE';
 
-const HEADERS = ['ID', 'Brand', 'Name', 'Category', 'Price', 'Currency', 'Stock', 'Data'];
+const HEADERS = ['ID', 'Brand', 'Name', 'Category', 'Price', 'Currency', 'Quantity', 'Data'];
 
 function getSheet_() {
   return SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
@@ -80,6 +81,7 @@ function readAllProducts_() {
     if (!row[0]) continue;
     let data = {};
     try { data = JSON.parse(row[7] || '{}'); } catch (err) { data = {}; }
+    const quantity = Number(row[6]) || 0;
     products.push(Object.assign({}, data, {
       id: String(row[0]),
       brand: String(row[1]),
@@ -87,7 +89,8 @@ function readAllProducts_() {
       category: String(row[3]),
       price: Number(row[4]),
       currency: String(row[5]),
-      stock: String(row[6])
+      quantity: quantity,
+      stock: quantity > 0 ? 'in-stock' : 'sold-out'
     }));
   }
   return products;
@@ -100,8 +103,8 @@ function writeAllProducts_(products) {
   const rows = products.map(p => {
     const data = Object.assign({}, p);
     delete data.id; delete data.brand; delete data.name; delete data.category;
-    delete data.price; delete data.currency; delete data.stock;
-    return [p.id, p.brand, p.name, p.category, p.price, p.currency, p.stock, JSON.stringify(data)];
+    delete data.price; delete data.currency; delete data.quantity; delete data.stock;
+    return [p.id, p.brand, p.name, p.category, p.price, p.currency, Number(p.quantity) || 0, JSON.stringify(data)];
   });
   if (rows.length) sheet.getRange(2, 1, rows.length, HEADERS.length).setValues(rows);
 }

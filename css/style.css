@@ -520,6 +520,7 @@ a:hover { color: var(--accent); }
   color: var(--ink-soft);
   margin-bottom: var(--space-4);
 }
+.admin-field[hidden] { display: none; }
 .admin-field input[type="text"],
 .admin-field input[type="number"],
 .admin-field select,

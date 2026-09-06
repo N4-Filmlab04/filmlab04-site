@@ -73,7 +73,7 @@
           <button type="button" class="btn btn-secondary btn-sm" id="admin-new-modal-cancel">Cancel</button>
         </div>
       </div>
-      <p class="muted" style="font-size:0.875rem;">Required fields: Product ID, Brand, Name, Price, Currency, Stock, Category.</p>
+      <p class="muted" style="font-size:0.875rem;">Required fields: Product ID, Brand, Name, Price, Currency, Quantity, Category.</p>
 
       <div class="admin-table-wrap"></div>
     </section>
@@ -136,11 +136,8 @@
       <label class="admin-field">Currency
         <input type="text" id="f-currency" placeholder="RM">
       </label>
-      <label class="admin-field">Stock
-        <select id="f-stock">
-          <option value="in-stock">in-stock</option>
-          <option value="sold-out">sold-out</option>
-        </select>
+      <label class="admin-field">Quantity <span class="muted">(0 = sold out)</span>
+        <input type="number" step="1" min="0" id="f-quantity" placeholder="0">
       </label>
     </div>
 
