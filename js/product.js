@@ -99,3 +99,4 @@ document.addEventListener('DOMContentLoaded', () => {
   __selectedVariant = null;
   renderProduct();
 });
+window.addEventListener('filmlab04:products-updated', renderProduct);

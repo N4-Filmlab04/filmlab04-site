@@ -96,9 +96,13 @@
 <script src="js/cart.js"></script>
 <script src="js/shop.js"></script>
 <script>
-  loadProducts().then(products => {
-    document.getElementById('featured-grid').innerHTML = products.slice(0, 4).map(productCard).join('');
-  });
+  function renderFeatured() {
+    loadProducts().then(products => {
+      document.getElementById('featured-grid').innerHTML = products.slice(0, 4).map(productCard).join('');
+    });
+  }
+  renderFeatured();
+  window.addEventListener('filmlab04:products-updated', renderFeatured);
 </script>
 </body>
 </html>

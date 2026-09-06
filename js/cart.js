@@ -68,11 +68,52 @@ function cartCount(cart = getCart()) {
   return cart.reduce((sum, l) => sum + l.qty, 0);
 }
 
+const PRODUCTS_CACHE_KEY = 'filmlab04_products_cache_v1';
+
+function readProductsCache_() {
+  try {
+    const raw = localStorage.getItem(PRODUCTS_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeProductsCache_(products) {
+  try {
+    localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(products));
+  } catch {}
+}
+
+async function fetchProductsFresh_() {
+  const res = await fetch(PRODUCTS_ENDPOINT ? `${PRODUCTS_ENDPOINT}?action=products` : 'data/products.json');
+  return res.json();
+}
+
+// The Apps Script backend is noticeably slower than the static JSON file it
+// replaced, so pages paint instantly from a cached copy (if any) while a
+// fresh fetch runs in the background. If the fresh data differs, pages
+// listening for 'filmlab04:products-updated' re-render with it.
 async function loadProducts() {
   if (window.__filmlab04Products) return window.__filmlab04Products;
-  const res = await fetch(PRODUCTS_ENDPOINT ? `${PRODUCTS_ENDPOINT}?action=products` : 'data/products.json');
-  window.__filmlab04Products = await res.json();
-  return window.__filmlab04Products;
+
+  const cached = readProductsCache_();
+  if (cached) {
+    window.__filmlab04Products = cached;
+    fetchProductsFresh_().then(fresh => {
+      writeProductsCache_(fresh);
+      if (JSON.stringify(fresh) !== JSON.stringify(window.__filmlab04Products)) {
+        window.__filmlab04Products = fresh;
+        window.dispatchEvent(new CustomEvent('filmlab04:products-updated'));
+      }
+    }).catch(() => {});
+    return cached;
+  }
+
+  const products = await fetchProductsFresh_();
+  window.__filmlab04Products = products;
+  writeProductsCache_(products);
+  return products;
 }
 
 function renderCartBadge() {

@@ -90,3 +90,4 @@ async function renderShop() {
 }
 
 document.addEventListener('DOMContentLoaded', renderShop);
+window.addEventListener('filmlab04:products-updated', renderShop);
