@@ -78,7 +78,10 @@ function initCheckout() {
       const p = products.find(p => p.id === line.id);
       if (!p) return null;
       subtotal += p.price * line.qty;
-      return { name: `${p.brand} ${p.name}`, variant: line.variant, qty: line.qty, price: p.price };
+      // id is the authoritative field — the backend re-prices every order
+      // from the live catalog by id, name/price here are only a fallback
+      // for the "no backend configured" demo path.
+      return { id: p.id, name: `${p.brand} ${p.name}`, variant: line.variant, qty: line.qty, price: p.price };
     }).filter(Boolean);
 
     const orderId = 'FL04-' + Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -99,7 +102,10 @@ function initCheckout() {
       localStorage.setItem(CART_KEY, '[]');
       renderCartBadge();
       document.getElementById('step-details').style.display = 'none';
-      renderPaymentStep(orderId, subtotal);
+      // The backend re-prices from the live catalog and is authoritative —
+      // fall back to the locally computed subtotal only in the no-backend
+      // demo path, where result.subtotal doesn't exist.
+      renderPaymentStep(orderId, typeof result.subtotal === 'number' ? result.subtotal : subtotal);
       document.getElementById('step-payment').style.display = 'block';
       if (result.demo) showToast('Order placed (demo — not saved yet)');
     } catch (err) {
