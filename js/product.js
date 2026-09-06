@@ -28,61 +28,63 @@ async function renderProduct() {
   // any individual colour's own stock status.
   const masterSoldOut = p.stock !== 'in-stock';
   const soldOut = masterSoldOut || (hasVariants && __selectedVariant.stock !== 'in-stock');
+  const idJs = escapeJsString(p.id);
+  const nameSafe = escapeHtml(p.name);
 
   root.innerHTML = `
     <div class="grid-2">
       <div class="product-card-img" style="border-radius:16px; aspect-ratio: 4/5;">
-        ${image ? `<img src="${image}" alt="${p.brand} ${p.name}">` : 'photo coming soon'}
+        ${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(p.brand)} ${nameSafe}">` : 'photo coming soon'}
       </div>
       <div>
         <span class="badge ${soldOut ? 'badge-sold-out' : 'badge-in-stock'}">${soldOut ? 'Sold out' : 'In stock'}</span>
-        <div class="product-brand">${p.brand}</div>
-        <h1>${p.name}</h1>
-        <p class="product-tagline">${p.tagline}</p>
+        <div class="product-brand">${escapeHtml(p.brand)}</div>
+        <h1>${nameSafe}</h1>
+        <p class="product-tagline">${escapeHtml(p.tagline)}</p>
         <div class="chip-row">
           ${[
-            p.iso && `<span class="chip">ISO ${p.iso}</span>`,
-            p.format && `<span class="chip">${p.format} format</span>`,
-            p.type && `<span class="chip">${p.type}</span>`,
-            p.shots && `<span class="chip">${p.shots} exposures</span>`
+            p.iso && `<span class="chip">ISO ${escapeHtml(String(p.iso))}</span>`,
+            p.format && `<span class="chip">${escapeHtml(p.format)} format</span>`,
+            p.type && `<span class="chip">${escapeHtml(p.type)}</span>`,
+            p.shots && `<span class="chip">${escapeHtml(String(p.shots))} exposures</span>`
           ].filter(Boolean).join('')}
         </div>
         ${hasVariants ? `
         <div class="variant-picker">
-          <div class="variant-label">Colour: <strong>${__selectedVariant.color}</strong></div>
+          <div class="variant-label">Colour: <strong>${escapeHtml(__selectedVariant.color)}</strong></div>
           <div class="variant-options">
             ${p.variants.map(v => `
               <button class="variant-option ${v.color === __selectedVariant.color ? 'active' : ''}"
                 ${masterSoldOut || v.stock !== 'in-stock' ? 'disabled' : ''}
-                onclick="selectVariant('${p.id}', '${v.color}')">${v.color}</button>`).join('')}
+                onclick="selectVariant('${idJs}', '${escapeJsString(v.color)}')">${escapeHtml(v.color)}</button>`).join('')}
           </div>
         </div>` : ''}
-        <p>${p.description}</p>
+        <p>${escapeHtml(p.description)}</p>
         <div style="display:flex; align-items:center; gap:16px; margin: 24px 0;">
-          <span class="product-price" style="font-size:1.5rem;">${p.currency}${p.price.toFixed(2)}</span>
+          <span class="product-price" style="font-size:1.5rem;">${escapeHtml(p.currency)}${p.price.toFixed(2)}</span>
           <button class="btn btn-primary" ${soldOut ? 'disabled' : ''}
-            onclick="addToCart('${p.id}', 1, ${hasVariants ? `'${__selectedVariant.color}'` : 'null'}); openCart();">${soldOut ? 'Sold out' : 'Add to cart'}</button>
+            onclick="addToCart('${idJs}', 1, ${hasVariants ? `'${escapeJsString(__selectedVariant.color)}'` : 'null'}); openCart();">${soldOut ? 'Sold out' : 'Add to cart'}</button>
         </div>
       </div>
     </div>
     ${p.about || (p.features && p.features.length) ? `
     <div class="section">
-      <h2>About ${p.name}</h2>
-      ${p.about ? `<p>${p.about}</p>` : ''}
+      <h2>About ${nameSafe}</h2>
+      ${p.about ? `<p>${escapeHtml(p.about)}</p>` : ''}
       ${p.features && p.features.length ? `
       <div class="product-grid">
         ${p.features.map(f => `
           <div>
-            ${f.image ? `<div class="product-card-img" style="border-radius:16px; aspect-ratio: 4/5; margin-bottom: var(--space-3);"><img src="${f.image}" alt="${f.title}"></div>` : ''}
-            <h3>${f.title}</h3>
-            <p>${f.text}</p>
+            ${f.image ? `<div class="product-card-img" style="border-radius:16px; aspect-ratio: 4/5; margin-bottom: var(--space-3);"><img src="${escapeHtml(f.image)}" alt="${escapeHtml(f.title)}"></div>` : ''}
+            <h3>${escapeHtml(f.title)}</h3>
+            <p>${escapeHtml(f.text)}</p>
           </div>`).join('')}
       </div>` : ''}
     </div>` : ''}
     <div class="section">
-      <h2>Sample shots on ${p.name}</h2>
+      <h2>Sample shots on ${nameSafe}</h2>
       ${p.sampleImages && p.sampleImages.length
-        ? `<div class="product-grid">${p.sampleImages.map(src => `<div class="product-card-img"><img src="${src}" alt="Sample shot on ${p.name}"></div>`).join('')}</div>`
+        ? `<div class="product-grid">${p.sampleImages.map(src => `<div class="product-card-img"><img src="${escapeHtml(src)}" alt="Sample shot on ${nameSafe}"></div>`).join('')}</div>`
         : '<p class="muted">Sample shots coming soon.</p>'}
     </div>`;
 }
