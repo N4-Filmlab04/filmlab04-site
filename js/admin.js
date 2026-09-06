@@ -45,7 +45,7 @@ async function adminPost(payload) {
     body: JSON.stringify({ ...payload, idToken: __idToken })
   });
   const body = await res.json();
-  if (body.error) throw new Error(body.error === 'Not authorized' ? '登入已过期或没有权限，请重新登入。' : body.error);
+  if (body.error) throw new Error(body.error === 'Not authorized' ? 'Your session has expired or you no longer have access. Please sign in again.' : body.error);
   return body;
 }
 
@@ -330,7 +330,7 @@ async function saveEditor() {
   }
   const variantsShown = !document.getElementById('f-variants-section').hidden;
   if (variantsShown && !(parsed.variants && parsed.variants.length)) {
-    showAdminError('请至少新增一个颜色/款式，或取消编辑重新选择「单一款式」。');
+    showAdminError('Please add at least one colour/style, or cancel and choose "Single style" instead.');
     return;
   }
 
@@ -357,14 +357,14 @@ async function saveEditor() {
 }
 
 async function importFromStaticJson() {
-  if (!confirm('这会用 data/products.json 目前的内容覆盖 Google Sheet 里的资料，确定吗？')) return;
+  if (!confirm('This will overwrite the Google Sheet data with the current contents of data/products.json. Continue?')) return;
   try {
     const res = await fetch('data/products.json');
     const products = await res.json();
     await saveAllProducts(products);
     __adminProducts = products;
     renderAdminTable();
-    showToast('已汇入');
+    showToast('Imported');
   } catch (err) {
     alert(err.message);
   }
@@ -373,25 +373,25 @@ async function importFromStaticJson() {
 function formatDateTime(value) {
   const d = new Date(value);
   if (isNaN(d.getTime())) return String(value || '—');
-  return d.toLocaleString('zh-MY', { dateStyle: 'medium', timeStyle: 'short' });
+  return d.toLocaleString('en-MY', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 async function loadSales() {
   const wrap = document.getElementById('admin-sales-wrap');
   if (!wrap) return;
-  wrap.innerHTML = '<p class="muted">载入中...</p>';
+  wrap.innerHTML = '<p class="muted">Loading...</p>';
   try {
     const res = await fetch(`${ADMIN_ENDPOINT}?action=sales&idToken=${encodeURIComponent(__idToken)}`);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     wrap.innerHTML = `
       <div class="admin-sales-stats">
-        <div class="admin-sales-stat"><span>订单总数</span><strong>${data.totalOrders}</strong></div>
-        <div class="admin-sales-stat"><span>订单总额（含未确认付款）</span><strong>RM${data.totalRevenue.toFixed(2)}</strong></div>
+        <div class="admin-sales-stat"><span>Total orders</span><strong>${data.totalOrders}</strong></div>
+        <div class="admin-sales-stat"><span>Total order value (incl. unconfirmed payments)</span><strong>RM${data.totalRevenue.toFixed(2)}</strong></div>
       </div>
       <div class="admin-table-scroll">
         <table class="admin-table">
-          <thead><tr><th>订单编号</th><th>时间</th><th>客人</th><th>电话</th><th>品项</th><th>金额</th><th>状态</th></tr></thead>
+          <thead><tr><th>Order ID</th><th>Time</th><th>Customer</th><th>Phone</th><th>Items</th><th>Amount</th><th>Status</th></tr></thead>
           <tbody>${data.recentOrders.map(o => `
             <tr>
               <td>${escapeHtml(o.orderId)}</td>
@@ -401,7 +401,7 @@ async function loadSales() {
               <td>${escapeHtml(o.items)}</td>
               <td>RM${Number(o.subtotal).toFixed(2)}</td>
               <td>${escapeHtml(o.paymentStatus)}</td>
-            </tr>`).join('') || '<tr><td colspan="7" class="muted">还没有订单</td></tr>'}</tbody>
+            </tr>`).join('') || '<tr><td colspan="7" class="muted">No orders yet</td></tr>'}</tbody>
         </table>
       </div>`;
   } catch (err) {
@@ -447,13 +447,13 @@ async function handleCredentialResponse(response) {
     const data = await res.json();
     if (!data.authorized) {
       __idToken = null;
-      showGateError('这个 Google 帐号没有权限进入 admin。');
+      showGateError('This Google account does not have access to the admin panel.');
       return;
     }
     __userEmail = data.email;
     showSignedIn(data.email);
   } catch (err) {
-    showGateError('无法验证登入，请检查网路连线后重试。');
+    showGateError('Could not verify sign-in. Please check your connection and try again.');
   }
 }
 
@@ -470,7 +470,7 @@ function initAdmin() {
 
   if (!ADMIN_ENDPOINT || !GOOGLE_CLIENT_ID) {
     document.querySelector('.container').insertAdjacentHTML('afterbegin',
-      '<p class="admin-error">ADMIN_ENDPOINT / GOOGLE_CLIENT_ID 还没设定 — 编辑 js/admin.js 顶部填入。</p>');
+      '<p class="admin-error">ADMIN_ENDPOINT / GOOGLE_CLIENT_ID not set yet — edit the top of js/admin.js to fill them in.</p>');
     return;
   }
 

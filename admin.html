@@ -34,43 +34,43 @@
   </header>
 
   <div class="admin-gate" id="admin-gate">
-    <p>请用授权的 Google 帐号登入。</p>
+    <p>Please sign in with an authorized Google account.</p>
     <div id="admin-signin-btn"></div>
     <p class="admin-error" id="admin-gate-error" hidden></p>
   </div>
 
   <div id="admin-app" hidden>
     <div class="admin-toolbar">
-      <span class="muted" style="font-size:0.875rem;">已登入：<strong id="admin-user-email"></strong></span>
-      <button class="btn btn-secondary btn-sm" id="admin-signout">登出</button>
+      <span class="muted" style="font-size:0.875rem;">Signed in as: <strong id="admin-user-email"></strong></span>
+      <button class="btn btn-secondary btn-sm" id="admin-signout">Sign out</button>
     </div>
 
     <div class="admin-tabs">
-      <button type="button" class="btn btn-primary btn-sm admin-tab-btn" id="admin-tab-products">商品目录</button>
-      <button type="button" class="btn btn-secondary btn-sm admin-tab-btn" id="admin-tab-sales">销售总览</button>
+      <button type="button" class="btn btn-primary btn-sm admin-tab-btn" id="admin-tab-products">Product catalog</button>
+      <button type="button" class="btn btn-secondary btn-sm admin-tab-btn" id="admin-tab-sales">Sales overview</button>
     </div>
 
     <section class="section" id="admin-view-sales" style="padding-top:24px;" hidden>
-      <h2>销售总览</h2>
+      <h2>Sales overview</h2>
       <div id="admin-sales-wrap"></div>
     </section>
 
     <section class="section" id="admin-view-products" style="padding-top:24px;">
       <div class="admin-toolbar">
-        <h2 style="margin:0;">商品目录</h2>
+        <h2 style="margin:0;">Product catalog</h2>
         <button class="btn btn-primary btn-sm" id="admin-new">+ New product</button>
-        <button class="btn btn-secondary btn-sm" id="admin-import-json">从 data/products.json 汇入</button>
+        <button class="btn btn-secondary btn-sm" id="admin-import-json">Import from data/products.json</button>
       </div>
 
       <div class="admin-modal-overlay" id="admin-new-modal" hidden>
         <div class="admin-modal">
-          <h3 class="mt-0">新增产品</h3>
-          <p class="muted">这个产品只有一款，还是有多种颜色／款式？</p>
+          <h3 class="mt-0">New product</h3>
+          <p class="muted">Does this product have one style, or multiple colours/styles?</p>
           <div class="admin-modal-options">
-            <button type="button" class="btn btn-secondary" id="admin-new-single">单一款式</button>
-            <button type="button" class="btn btn-secondary" id="admin-new-multi">多种颜色／款式</button>
+            <button type="button" class="btn btn-secondary" id="admin-new-single">Single style</button>
+            <button type="button" class="btn btn-secondary" id="admin-new-multi">Multiple colours/styles</button>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" id="admin-new-modal-cancel">取消</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="admin-new-modal-cancel">Cancel</button>
         </div>
       </div>
       <p class="muted" style="font-size:0.875rem;">Required fields: Product ID, Brand, Name, Price, Currency, Stock, Category.</p>
