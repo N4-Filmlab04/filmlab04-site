@@ -1,4 +1,4 @@
-/** Product CRUD (admin.html) + sales overview (admin-sales.html). Talks to the "Filmlab04
+/** Product CRUD + sales overview for admin.html (switched between via tabs). Talks to the "Filmlab04
  * Products" Apps Script Web App (apps-script/admin-api.gs) — reads/writes
  * the live Google Sheet product catalog and reads order data for the sales
  * summary. Gated behind Google Sign-In; only emails on the backend's
@@ -483,8 +483,25 @@ function initAdmin() {
   document.getElementById('admin-signout')?.addEventListener('click', signOut);
   document.getElementById('admin-import-json')?.addEventListener('click', importFromStaticJson);
 
-  // The product-editor UI only exists on admin.html (admin-sales.html only
-  // shows the sales overview), so skip wiring it up if it's not on this page.
+  const tabProducts = document.getElementById('admin-tab-products');
+  const tabSales = document.getElementById('admin-tab-sales');
+  if (tabProducts && tabSales) {
+    const viewProducts = document.getElementById('admin-view-products');
+    const viewSales = document.getElementById('admin-view-sales');
+    const showTab = (tab) => {
+      viewProducts.hidden = tab !== 'products';
+      viewSales.hidden = tab !== 'sales';
+      tabProducts.classList.toggle('btn-primary', tab === 'products');
+      tabProducts.classList.toggle('btn-secondary', tab !== 'products');
+      tabSales.classList.toggle('btn-primary', tab === 'sales');
+      tabSales.classList.toggle('btn-secondary', tab !== 'sales');
+    };
+    tabProducts.addEventListener('click', () => showTab('products'));
+    tabSales.addEventListener('click', () => showTab('sales'));
+  }
+
+  // The product-editor UI only exists on admin.html, guard in case a future
+  // page reuses admin.js without it.
   if (document.getElementById('admin-editor')) {
     document.getElementById('admin-new').addEventListener('click', () => {
       document.getElementById('admin-new-modal').hidden = false;
