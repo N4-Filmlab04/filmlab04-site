@@ -7,6 +7,11 @@
 
 const ORDER_ENDPOINT = 'https://script.google.com/macros/s/AKfycbybjY0Tk13wPQ8T5aKDWz-xpEQpf_7OATxhBEwdjS404sXHUrXMXhCA1WcAgkWhKJiG_A/exec';
 
+// Fallback contact used when the order backend is unreachable (see
+// showOrderFailedNotice below) — no country code punctuation, as required
+// by wa.me links.
+const WHATSAPP_NUMBER = '6044389878';
+
 const PAYMENT_INFO = {
   qrImage: 'images/payment-qr.jpg', // DuitNow QR — N4 Camera x Alor Setar
   bankName: 'Maybank',
@@ -18,6 +23,21 @@ function showCheckoutError(message) {
   const el = document.getElementById('co-error');
   el.textContent = message;
   el.hidden = !message;
+}
+
+// Shown specifically when submitOrder() itself fails (the order backend is
+// unreachable) — as opposed to a plain form-validation error, this gives
+// the customer a way to still get their order through, with their cart
+// pre-filled into the WhatsApp message so they don't have to retype it.
+function showOrderFailedNotice(items, subtotal) {
+  const lines = items.map(i => `${i.qty}x ${i.name}${i.variant ? ' (' + i.variant + ')' : ''}`).join('\n');
+  const text = `Hi, I'd like to place an order — our online checkout isn't working right now:\n\n${lines}\n\nSubtotal: RM${subtotal.toFixed(2)}`;
+  document.getElementById('co-whatsapp-link').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+  document.getElementById('co-order-failed').hidden = false;
+}
+
+function hideOrderFailedNotice() {
+  document.getElementById('co-order-failed').hidden = true;
 }
 
 async function submitOrder(payload) {
@@ -60,6 +80,7 @@ function initCheckout() {
 
   placeOrderBtn.addEventListener('click', async () => {
     showCheckoutError('');
+    hideOrderFailedNotice();
     const name = document.getElementById('co-name').value.trim();
     const phone = document.getElementById('co-phone').value.trim();
     const email = document.getElementById('co-email').value.trim();
@@ -109,7 +130,7 @@ function initCheckout() {
       document.getElementById('step-payment').style.display = 'block';
       if (result.demo) showToast('Order placed (demo — not saved yet)');
     } catch (err) {
-      showCheckoutError(err.message);
+      showOrderFailedNotice(items, subtotal);
     } finally {
       placeOrderBtn.disabled = false;
     }
