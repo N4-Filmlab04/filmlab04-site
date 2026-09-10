@@ -380,6 +380,70 @@ function formatDateTime(value) {
   return d.toLocaleString('en-MY', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
+let __salesOrders = [];
+let __salesStats = { totalOrders: 0, totalRevenue: 0 };
+
+function salesOrderRow(o) {
+  const paid = o.paymentStatus === 'Paid';
+  return `
+    <tr>
+      <td>${escapeHtml(o.orderId)}</td>
+      <td>${escapeHtml(formatDateTime(o.submittedAt))}</td>
+      <td>${escapeHtml(o.name)}</td>
+      <td>${escapeHtml(o.phone)}</td>
+      <td>${escapeHtml(o.items)}</td>
+      <td>RM${Number(o.subtotal).toFixed(2)}</td>
+      <td><span class="badge ${paid ? 'badge-in-stock' : 'badge-pending'}">${escapeHtml(o.paymentStatus || 'Pending')}</span></td>
+      <td>${paid ? '' : `<button class="btn btn-secondary btn-sm" data-mark-paid="${escapeHtml(o.orderId)}">Mark as paid</button>`}</td>
+    </tr>`;
+}
+
+function renderSalesTable() {
+  const wrap = document.getElementById('admin-sales-wrap');
+  if (!wrap) return;
+
+  const query = (document.getElementById('admin-sales-search')?.value || '').trim().toLowerCase();
+  const statusFilter = document.getElementById('admin-sales-status-filter')?.value || '';
+  const filtered = __salesOrders.filter(o => {
+    if (statusFilter && (o.paymentStatus || 'Pending') !== statusFilter) return false;
+    if (!query) return true;
+    return [o.orderId, o.name, o.items].some(v => String(v || '').toLowerCase().includes(query));
+  });
+
+  wrap.innerHTML = `
+    <div class="admin-sales-stats">
+      <div class="admin-sales-stat"><span>Total orders</span><strong>${__salesStats.totalOrders}</strong></div>
+      <div class="admin-sales-stat"><span>Total order value (incl. unconfirmed payments)</span><strong>RM${__salesStats.totalRevenue.toFixed(2)}</strong></div>
+    </div>
+    <div class="admin-table-scroll">
+      <table class="admin-table">
+        <thead><tr><th>Order ID</th><th>Time</th><th>Customer</th><th>Phone</th><th>Items</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+        <tbody>${filtered.map(salesOrderRow).join('') || `<tr><td colspan="8" class="muted">${__salesOrders.length ? 'No orders match this search' : 'No orders yet'}</td></tr>`}</tbody>
+      </table>
+    </div>`;
+
+  wrap.querySelectorAll('[data-mark-paid]').forEach(btn => {
+    btn.addEventListener('click', () => markOrderPaid(btn.dataset.markPaid, btn));
+  });
+}
+
+async function markOrderPaid(orderId, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Marking...';
+  try {
+    const result = await adminPost({ action: 'mark-order-paid', orderId });
+    if (!result.ok) throw new Error(result.error || 'Could not mark as paid');
+    const order = __salesOrders.find(o => o.orderId === orderId);
+    if (order) order.paymentStatus = 'Paid';
+    renderSalesTable();
+    showToast('Marked as paid');
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Mark as paid';
+    alert(err.message);
+  }
+}
+
 async function loadSales() {
   const wrap = document.getElementById('admin-sales-wrap');
   if (!wrap) return;
@@ -388,26 +452,9 @@ async function loadSales() {
     const res = await fetch(`${ADMIN_ENDPOINT}?action=sales&idToken=${encodeURIComponent(__idToken)}`);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    wrap.innerHTML = `
-      <div class="admin-sales-stats">
-        <div class="admin-sales-stat"><span>Total orders</span><strong>${data.totalOrders}</strong></div>
-        <div class="admin-sales-stat"><span>Total order value (incl. unconfirmed payments)</span><strong>RM${data.totalRevenue.toFixed(2)}</strong></div>
-      </div>
-      <div class="admin-table-scroll">
-        <table class="admin-table">
-          <thead><tr><th>Order ID</th><th>Time</th><th>Customer</th><th>Phone</th><th>Items</th><th>Amount</th><th>Status</th></tr></thead>
-          <tbody>${data.recentOrders.map(o => `
-            <tr>
-              <td>${escapeHtml(o.orderId)}</td>
-              <td>${escapeHtml(formatDateTime(o.submittedAt))}</td>
-              <td>${escapeHtml(o.name)}</td>
-              <td>${escapeHtml(o.phone)}</td>
-              <td>${escapeHtml(o.items)}</td>
-              <td>RM${Number(o.subtotal).toFixed(2)}</td>
-              <td>${escapeHtml(o.paymentStatus)}</td>
-            </tr>`).join('') || '<tr><td colspan="7" class="muted">No orders yet</td></tr>'}</tbody>
-        </table>
-      </div>`;
+    __salesOrders = data.recentOrders;
+    __salesStats = { totalOrders: data.totalOrders, totalRevenue: data.totalRevenue };
+    renderSalesTable();
   } catch (err) {
     wrap.innerHTML = `<p class="admin-error">${escapeHtml(err.message)}</p>`;
   }
@@ -486,6 +533,8 @@ function initAdmin() {
 
   document.getElementById('admin-signout')?.addEventListener('click', signOut);
   document.getElementById('admin-import-json')?.addEventListener('click', importFromStaticJson);
+  document.getElementById('admin-sales-search')?.addEventListener('input', renderSalesTable);
+  document.getElementById('admin-sales-status-filter')?.addEventListener('change', renderSalesTable);
 
   const tabProducts = document.getElementById('admin-tab-products');
   const tabSales = document.getElementById('admin-tab-sales');

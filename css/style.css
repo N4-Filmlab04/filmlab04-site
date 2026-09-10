@@ -193,6 +193,7 @@ a:hover { color: var(--accent); }
 }
 .badge-in-stock { background: rgba(76,107,79,0.12); color: var(--success); }
 .badge-sold-out { background: rgba(179,69,61,0.12); color: var(--danger); }
+.badge-pending { background: var(--surface-alt); color: var(--ink-soft); }
 .product-card-footer {
   margin-top: auto;
   display: flex;
@@ -421,6 +422,17 @@ a:hover { color: var(--accent); }
 
 /* Admin page */
 .admin-toolbar { margin: var(--space-6) 0; display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.admin-toolbar input[type="text"],
+.admin-toolbar select {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+}
+.admin-toolbar input[type="text"] { flex: 1 1 220px; min-width: 160px; }
 .admin-tabs { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-4); }
 .admin-gate {
   margin-top: var(--space-6);

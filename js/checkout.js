@@ -59,6 +59,12 @@ function renderPaymentStep(orderId, subtotal) {
   document.getElementById('pay-order-id').textContent = orderId;
   document.getElementById('pay-amount').textContent = subtotal.toFixed(2);
 
+  // Reset to the QR tab in case a previous order left the bank tab active.
+  document.querySelectorAll('#payment-method-tabs .segmented-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('#payment-method-tabs .segmented-btn[data-pay-panel="qr"]')?.classList.add('active');
+  document.getElementById('pay-panel-qr').hidden = false;
+  document.getElementById('pay-panel-bank').hidden = true;
+
   document.getElementById('payment-qr-box').innerHTML = PAYMENT_INFO.qrImage
     ? `<img src="${PAYMENT_INFO.qrImage}" alt="Payment QR code" style="display:block; width:100%;">`
     : '<div class="product-card-img" style="aspect-ratio:1;">QR code coming soon</div>';
@@ -76,6 +82,15 @@ function initCheckout() {
   toDetailsBtn.addEventListener('click', () => {
     document.getElementById('step-cart').style.display = 'none';
     document.getElementById('step-details').style.display = 'block';
+  });
+
+  document.getElementById('payment-method-tabs')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-pay-panel]');
+    if (!btn) return;
+    document.querySelectorAll('#payment-method-tabs .segmented-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('pay-panel-qr').hidden = btn.dataset.payPanel !== 'qr';
+    document.getElementById('pay-panel-bank').hidden = btn.dataset.payPanel !== 'bank';
   });
 
   placeOrderBtn.addEventListener('click', async () => {

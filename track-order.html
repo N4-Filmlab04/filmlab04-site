@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Blog — Filmlab04</title>
+<title>Track your order — Filmlab04</title>
 <link rel="icon" type="image/png" href="images/favicon.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
@@ -18,7 +18,7 @@
       <li><a href="index.html">Home</a></li>
       <li><a href="shop.html">Shop</a></li>
       <li><a href="services.html">Services</a></li>
-      <li><a href="blog.html" class="active">Blog</a></li>
+      <li><a href="blog.html">Blog</a></li>
     </ul>
     <a href="cart.html" class="nav-cart">
       🛒<span class="nav-cart-badge">0</span>
@@ -26,36 +26,18 @@
   </div>
 </nav>
 
-<header class="container" style="padding: 48px 0 24px;">
-  <h1>Journal</h1>
-  <p>Updates, behind-the-scenes, and notes on film from the Filmlab04 team.</p>
-</header>
+<div class="container" style="max-width:480px; padding: 48px 0;">
+  <h1>Track your order</h1>
+  <p class="muted" style="margin-bottom:32px;">Enter your order ID to check whether your payment has been confirmed.</p>
 
-<section class="container" style="max-width:720px; margin:0 auto; padding-bottom:64px;">
-  <article class="post-card">
-    <div class="post-date">Replace with real date</div>
-    <h2>Welcome to Filmlab04</h2>
-    <p>This is a placeholder post — swap it for the real story of how Filmlab04 started as part of N4 Camera Store, and what to expect here.</p>
-  </article>
-  <article class="post-card">
-    <div class="post-date">Replace with real date</div>
-    <h2>How we pick which film stocks to carry</h2>
-    <p>Placeholder post. A good first real entry: why these specific rolls (Kodak, Fujifilm, Harman, Leica) made the initial lineup.</p>
-  </article>
-</section>
+  <label class="form-field">Order ID
+    <input type="text" id="to-order-id" placeholder="FL04-XXXXXX" autocomplete="off">
+  </label>
+  <p class="form-error" id="to-error" hidden></p>
+  <button class="btn btn-primary btn-block" id="to-search-btn">Check status</button>
 
-<div class="cart-overlay"></div>
-<aside class="cart-drawer">
-  <div class="cart-drawer-head">
-    <h3 class="mt-0">Your cart</h3>
-    <button class="cart-close btn btn-secondary btn-sm">Close</button>
-  </div>
-  <div class="cart-drawer-items"></div>
-  <div class="cart-drawer-foot">
-    <div class="cart-subtotal"><span>Subtotal</span><span class="amount">RM0.00</span></div>
-    <a href="cart.html" class="btn btn-primary btn-block">Checkout</a>
-  </div>
-</aside>
+  <div id="to-result" style="margin-top:32px;" hidden></div>
+</div>
 
 <footer class="site-footer container">
   <div class="footer-cols">
@@ -73,5 +55,6 @@
 </footer>
 
 <script src="js/cart.js"></script>
+<script src="js/track-order.js"></script>
 </body>
 </html>

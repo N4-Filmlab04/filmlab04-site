@@ -19,10 +19,17 @@
  * doGet ?action=sales         — requires idToken. Returns an orders summary
  *                                read from the separate "Filmlab04 Orders"
  *                                sheet, for the admin sales overview.
+ * doGet ?action=order-status  — public, no login. Looks up one order by
+ *                                orderId (that's the only thing a customer
+ *                                needs to check their own order — see
+ *                                track-order.html) and returns a small,
+ *                                non-sensitive subset of its fields.
  * doGet ?action=whoami        — requires idToken. Returns {authorized,email}.
  * doPost {action:'save-all'}  — requires idToken. Replaces the whole catalog.
  * doPost {action:'upload-image'} — requires idToken. Saves a base64 image to
  *                                Drive and returns a public URL for it.
+ * doPost {action:'mark-order-paid'} — requires idToken. Sets one order's
+ *                                Payment Status to "Paid" in the Orders sheet.
  *
  * Setup:
  * 1. Create a new Google Sheet, name it "Filmlab04 Products".
@@ -109,9 +116,12 @@ function writeAllProducts_(products) {
   if (rows.length) sheet.getRange(2, 1, rows.length, HEADERS.length).setValues(rows);
 }
 
+function getOrdersSheet_() {
+  return SpreadsheetApp.openById(ORDERS_SHEET_ID).getSheets()[0];
+}
+
 function salesSummary_() {
-  const ss = SpreadsheetApp.openById(ORDERS_SHEET_ID);
-  const sheet = ss.getSheets()[0];
+  const sheet = getOrdersSheet_();
   const values = sheet.getDataRange().getValues();
   const orders = [];
   let totalRevenue = 0;
@@ -136,8 +146,45 @@ function salesSummary_() {
   return {
     totalOrders: orders.length,
     totalRevenue: totalRevenue,
-    recentOrders: orders.slice(0, 30)
+    recentOrders: orders.slice(0, 200)
   };
+}
+
+// Sheet row index (1-based, matching getRange) of the order with this
+// orderId, or -1 if not found. Column A holds the order ID.
+function findOrderRow_(sheet, orderId) {
+  const ids = sheet.getRange(2, 1, Math.max(sheet.getLastRow() - 1, 0), 1).getValues();
+  for (let i = 0; i < ids.length; i++) {
+    if (String(ids[i][0]) === String(orderId)) return i + 2;
+  }
+  return -1;
+}
+
+// Public lookup for track-order.html — orderId is the only credential, so
+// this deliberately returns nothing more sensitive than the order itself
+// (no phone/email, matching what a customer already knows about their own
+// order).
+function getOrderStatus_(orderId) {
+  const sheet = getOrdersSheet_();
+  const row = findOrderRow_(sheet, orderId);
+  if (row === -1) return { found: false };
+  const values = sheet.getRange(row, 1, 1, 9).getValues()[0];
+  return {
+    found: true,
+    orderId: values[0],
+    submittedAt: values[1],
+    items: values[5],
+    subtotal: Number(values[6]) || 0,
+    paymentStatus: values[7]
+  };
+}
+
+function markOrderPaid_(orderId) {
+  const sheet = getOrdersSheet_();
+  const row = findOrderRow_(sheet, orderId);
+  if (row === -1) return { ok: false, error: 'Order not found' };
+  sheet.getRange(row, 8).setValue('Paid'); // column H — Payment Status
+  return { ok: true };
 }
 
 function uploadImage_(filename, mimeType, dataBase64) {
@@ -172,6 +219,9 @@ function doGet(e) {
     if (!email) return jsonOut_({ error: 'Not authorized' });
     return jsonOut_(salesSummary_());
   }
+  if (action === 'order-status') {
+    return jsonOut_(getOrderStatus_(e.parameter.orderId || ''));
+  }
   if (action === 'whoami') {
     const email = verifyLogin_(e.parameter.idToken);
     return jsonOut_({ authorized: !!email, email: email || null });
@@ -191,6 +241,9 @@ function doPost(e) {
   if (body.action === 'upload-image') {
     const url = uploadImage_(body.filename, body.mimeType, body.dataBase64);
     return jsonOut_({ url: url });
+  }
+  if (body.action === 'mark-order-paid') {
+    return jsonOut_(markOrderPaid_(body.orderId || ''));
   }
   return jsonOut_({ error: 'Unknown action' });
 }

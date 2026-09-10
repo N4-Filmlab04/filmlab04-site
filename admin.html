@@ -52,6 +52,14 @@
 
     <section class="section" id="admin-view-sales" style="padding-top:24px;" hidden>
       <h2>Sales overview</h2>
+      <div class="admin-toolbar">
+        <input type="text" id="admin-sales-search" placeholder="Search by order ID, name, or item...">
+        <select id="admin-sales-status-filter">
+          <option value="">All statuses</option>
+          <option value="Pending">Pending</option>
+          <option value="Paid">Paid</option>
+        </select>
+      </div>
       <div id="admin-sales-wrap"></div>
     </section>
 
