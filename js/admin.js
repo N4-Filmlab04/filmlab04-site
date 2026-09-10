@@ -460,6 +460,39 @@ async function loadSales() {
   }
 }
 
+async function loadMaintenanceToggle() {
+  const toggle = document.getElementById('admin-maintenance-toggle');
+  const status = document.getElementById('admin-maintenance-status');
+  if (!toggle) return;
+  try {
+    const res = await fetch(`${ADMIN_ENDPOINT}?action=checkout-status`);
+    const data = await res.json();
+    toggle.checked = !!data.maintenanceMode;
+    status.textContent = toggle.checked ? 'On — checkout shows WhatsApp fallback' : 'Off — checkout is live';
+  } catch (err) {
+    status.textContent = 'Could not load status';
+  }
+}
+
+async function toggleMaintenanceMode() {
+  const toggle = document.getElementById('admin-maintenance-toggle');
+  const status = document.getElementById('admin-maintenance-status');
+  const enabled = toggle.checked;
+  toggle.disabled = true;
+  status.textContent = 'Saving...';
+  try {
+    const result = await adminPost({ action: 'set-checkout-maintenance', enabled });
+    if (!result.ok) throw new Error(result.error || 'Could not update');
+    status.textContent = enabled ? 'On — checkout shows WhatsApp fallback' : 'Off — checkout is live';
+  } catch (err) {
+    toggle.checked = !enabled;
+    status.textContent = 'Could not save — try again';
+    alert(err.message);
+  } finally {
+    toggle.disabled = false;
+  }
+}
+
 async function loadProductsSection() {
   const wrap = document.querySelector('.admin-table-wrap');
   if (!wrap) return;
@@ -475,6 +508,7 @@ async function loadProductsSection() {
 async function loadAdminApp() {
   loadProductsSection();
   loadSales();
+  loadMaintenanceToggle();
 }
 
 function showSignedIn(email) {
@@ -535,6 +569,7 @@ function initAdmin() {
   document.getElementById('admin-import-json')?.addEventListener('click', importFromStaticJson);
   document.getElementById('admin-sales-search')?.addEventListener('input', renderSalesTable);
   document.getElementById('admin-sales-status-filter')?.addEventListener('change', renderSalesTable);
+  document.getElementById('admin-maintenance-toggle')?.addEventListener('change', toggleMaintenanceMode);
 
   const tabProducts = document.getElementById('admin-tab-products');
   const tabSales = document.getElementById('admin-tab-sales');

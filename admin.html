@@ -50,6 +50,17 @@
       <button type="button" class="btn btn-secondary btn-sm admin-tab-btn" id="admin-tab-sales">Sales overview</button>
     </div>
 
+    <div class="notice" style="margin-top:var(--space-4); display:flex; align-items:center; justify-content:space-between; gap:16px;">
+      <div>
+        <strong>Checkout maintenance mode</strong>
+        <p style="margin:0;">When on, customers see a "message us on WhatsApp" notice instead of the normal payment flow — use this if the order system is down.</p>
+      </div>
+      <label style="display:flex; align-items:center; gap:8px; white-space:nowrap; cursor:pointer;">
+        <input type="checkbox" id="admin-maintenance-toggle">
+        <span id="admin-maintenance-status" class="muted">Loading...</span>
+      </label>
+    </div>
+
     <section class="section" id="admin-view-sales" style="padding-top:24px;" hidden>
       <h2>Sales overview</h2>
       <div class="admin-toolbar">

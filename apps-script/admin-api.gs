@@ -25,11 +25,19 @@
  *                                track-order.html) and returns a small,
  *                                non-sensitive subset of its fields.
  * doGet ?action=whoami        — requires idToken. Returns {authorized,email}.
+ * doGet ?action=checkout-status — public, no login. Returns
+ *                                {maintenanceMode}. js/checkout.js checks
+ *                                this before trying to submit an order —
+ *                                if true, it skips straight to the
+ *                                WhatsApp fallback instead of attempting
+ *                                (and waiting to fail) a real submission.
  * doPost {action:'save-all'}  — requires idToken. Replaces the whole catalog.
  * doPost {action:'upload-image'} — requires idToken. Saves a base64 image to
  *                                Drive and returns a public URL for it.
  * doPost {action:'mark-order-paid'} — requires idToken. Sets one order's
  *                                Payment Status to "Paid" in the Orders sheet.
+ * doPost {action:'set-checkout-maintenance'} — requires idToken. Toggles
+ *                                the maintenance-mode flag above.
  *
  * Setup:
  * 1. Create a new Google Sheet, name it "Filmlab04 Products".
@@ -187,6 +195,20 @@ function markOrderPaid_(orderId) {
   return { ok: true };
 }
 
+// Manual kill-switch for checkout, controlled from admin.html — lets Jun
+// Min force the WhatsApp fallback on/off himself (e.g. while the Orders
+// backend is down, or for planned maintenance) instead of it only
+// reacting to an actual failed request. Stored in Script Properties, not
+// the Sheet, since it's a simple flag with no need for a row/history.
+function getCheckoutMaintenanceMode_() {
+  return PropertiesService.getScriptProperties().getProperty('checkoutMaintenanceMode') === 'true';
+}
+
+function setCheckoutMaintenanceMode_(enabled) {
+  PropertiesService.getScriptProperties().setProperty('checkoutMaintenanceMode', enabled ? 'true' : 'false');
+  return { ok: true, maintenanceMode: enabled };
+}
+
 function uploadImage_(filename, mimeType, dataBase64) {
   const folder = getOrCreateImagesFolder_();
   const bytes = Utilities.base64Decode(dataBase64);
@@ -222,6 +244,9 @@ function doGet(e) {
   if (action === 'order-status') {
     return jsonOut_(getOrderStatus_(e.parameter.orderId || ''));
   }
+  if (action === 'checkout-status') {
+    return jsonOut_({ maintenanceMode: getCheckoutMaintenanceMode_() });
+  }
   if (action === 'whoami') {
     const email = verifyLogin_(e.parameter.idToken);
     return jsonOut_({ authorized: !!email, email: email || null });
@@ -244,6 +269,9 @@ function doPost(e) {
   }
   if (body.action === 'mark-order-paid') {
     return jsonOut_(markOrderPaid_(body.orderId || ''));
+  }
+  if (body.action === 'set-checkout-maintenance') {
+    return jsonOut_(setCheckoutMaintenanceMode_(!!body.enabled));
   }
   return jsonOut_({ error: 'Unknown action' });
 }

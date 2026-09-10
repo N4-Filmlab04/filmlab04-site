@@ -40,11 +40,30 @@ function hideOrderFailedNotice() {
   document.getElementById('co-order-failed').hidden = true;
 }
 
+// Admin-controlled kill-switch (see admin.html's "Checkout maintenance
+// mode" toggle) — checked before every submission so Jun Min can force
+// the WhatsApp fallback on/off himself, not just when a request actually
+// fails. If the check itself fails, don't block checkout on it — fall
+// through and let the real submission attempt (and its own error
+// handling) decide.
+async function checkoutMaintenanceMode() {
+  try {
+    const res = await fetch(`${PRODUCTS_ENDPOINT}?action=checkout-status`);
+    const data = await res.json();
+    return !!data.maintenanceMode;
+  } catch (err) {
+    return false;
+  }
+}
+
 async function submitOrder(payload) {
   if (!ORDER_ENDPOINT) {
     // No backend configured yet — this is where the real submission will
     // POST once the Google Sheet + Apps Script Web App is set up.
     return { ok: true, demo: true };
+  }
+  if (await checkoutMaintenanceMode()) {
+    throw new Error('Checkout is temporarily under maintenance.');
   }
   const res = await fetch(ORDER_ENDPOINT, {
     method: 'POST',
