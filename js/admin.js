@@ -6,7 +6,7 @@
  * Depends on cart.js for showToast()/escapeHtml(). */
 
 // Same Apps Script /exec URL as PRODUCTS_ENDPOINT in js/cart.js.
-const ADMIN_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyEuFDv68Pf5WUBqOYNPqiOL4BNgFyMsGCN2fXEgp7zTSh4MedmswBra5FYs1nD7W_c1Q/exec';
+const ADMIN_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyW4XSFes9LoCIUkCU7-2oWfNFTfTErV9fCksxrgy-ONdXX-h-ADkfZEz_XjyPVrF40WQ/exec';
 
 // OAuth Client ID from Google Cloud Console — must match GOOGLE_CLIENT_ID
 // in apps-script/admin-api.gs.
