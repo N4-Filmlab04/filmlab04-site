@@ -5,7 +5,7 @@
  * cart.js for getCart/loadProducts/escapeHtml/showToast/CART_KEY.
  */
 
-const ORDER_ENDPOINT = 'https://script.google.com/macros/s/AKfycbybjY0Tk13wPQ8T5aKDWz-xpEQpf_7OATxhBEwdjS404sXHUrXMXhCA1WcAgkWhKJiG_A/exec';
+const ORDER_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxS0Phx3Kem5VgXL5HnOHW4fSuUiR9Jr3kN3dA_N_FjvArdvp4Wx6DTp88cQ7vuA72o/exec';
 
 // Fallback contact used when the order backend is unreachable (see
 // showOrderFailedNotice below) — no country code punctuation, as required
@@ -65,11 +65,24 @@ async function submitOrder(payload) {
   if (await checkoutMaintenanceMode()) {
     throw new Error('Checkout is temporarily under maintenance.');
   }
-  const res = await fetch(ORDER_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload)
+  // Submitted over GET, not POST — real-world testing found POST requests
+  // to this Apps Script deployment unreliable (a Google-side platform
+  // issue) while GET has consistently routed and executed correctly, so
+  // order-handler.gs's doGet is the one actually used (see its file
+  // header). `items` is JSON-stringified into a single query param since
+  // query strings are flat. cache: 'no-store' avoids the browser serving
+  // a cached response for what's actually a write, not a read.
+  const params = new URLSearchParams({
+    action: 'submit-order',
+    orderId: payload.orderId,
+    name: payload.name,
+    phone: payload.phone,
+    email: payload.email,
+    notes: payload.notes,
+    submittedAt: payload.submittedAt,
+    items: JSON.stringify(payload.items)
   });
+  const res = await fetch(`${ORDER_ENDPOINT}?${params.toString()}`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Could not place order — please try again or contact us directly.');
   const result = await res.json();
   // order-handler.gs responds with HTTP 200 even when it caught an

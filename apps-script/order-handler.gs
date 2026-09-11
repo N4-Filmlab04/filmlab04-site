@@ -1,8 +1,17 @@
 /**
- * Google Apps Script Web App that receives POSTs from the filmlab04 shop
- * checkout (cart.html / js/checkout.js) and appends each order as a new
- * row in this spreadsheet — one row per order, with items listed as a
- * single readable column.
+ * Google Apps Script Web App that receives order submissions from the
+ * filmlab04 shop checkout (cart.html / js/checkout.js) and appends each
+ * order as a new row in this spreadsheet — one row per order, with items
+ * listed as a single readable column.
+ *
+ * Submission goes over GET, not POST: real-world testing found that POST
+ * requests to Apps Script Web App deployments have been unreliable (a
+ * Google-side platform issue affecting this project — see the project
+ * memory / Issue Tracker report), while GET requests route and execute
+ * correctly every time. So order data travels as URL query parameters
+ * (the `items` array JSON-stringified into a single `items` param)
+ * instead of a POST body. doPost is kept as a fallback in case POST
+ * reliability is ever restored, but doGet is the one actually used.
  *
  * Prices are never trusted from the client: this script re-fetches the
  * live product catalog (from PRODUCTS_ENDPOINT, the public admin-api.gs
@@ -84,9 +93,13 @@ function priceOrder_(items) {
   return { subtotal: subtotal, itemsText: parts.join('; '), flagged: flagged };
 }
 
-function doPost(e) {
+// Shared by doGet and doPost — data is {orderId, submittedAt, name, phone,
+// email, notes, items}. Never lets an unexpected error surface as Apps
+// Script's raw crash page (customers would see a confusing wall of text)
+// — always responds with clean JSON so js/checkout.js's own error
+// handling (the WhatsApp fallback) takes over instead.
+function recordOrder_(data) {
   try {
-    const data = JSON.parse(e.postData.contents);
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
     if (sheet.getLastRow() === 0) {
@@ -111,14 +124,51 @@ function doPost(e) {
       notes.trim()
     ]);
 
-    return ContentService.createTextOutput(JSON.stringify({ ok: true, orderId: data.orderId, subtotal: priced.subtotal }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return jsonOut_({ ok: true, orderId: data.orderId, subtotal: priced.subtotal });
   } catch (err) {
-    // Never let an unexpected error surface as Apps Script's raw crash
-    // page (customers would see a confusing wall of text) — always
-    // respond with clean JSON so js/checkout.js's own error handling
-    // (the WhatsApp fallback) takes over instead.
-    return ContentService.createTextOutput(JSON.stringify({ ok: false, error: String(err) }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return jsonOut_({ ok: false, error: String(err) });
   }
+}
+
+function jsonOut_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// Primary path — see the file header for why GET instead of POST.
+// action=submit-order carries the same fields the old POST body did,
+// just as query parameters; `items` is a JSON-stringified array since
+// query params are flat strings.
+function doGet(e) {
+  const action = e.parameter.action || 'submit-order';
+  if (action !== 'submit-order') {
+    return jsonOut_({ error: 'Unknown action' });
+  }
+  let items;
+  try {
+    items = JSON.parse(e.parameter.items || '[]');
+  } catch (err) {
+    return jsonOut_({ ok: false, error: 'Invalid items payload' });
+  }
+  return recordOrder_({
+    orderId: e.parameter.orderId,
+    submittedAt: e.parameter.submittedAt,
+    name: e.parameter.name,
+    phone: e.parameter.phone,
+    email: e.parameter.email,
+    notes: e.parameter.notes,
+    items: items
+  });
+}
+
+// Kept in case POST reliability is ever restored — not currently used by
+// checkout.js (see doGet above).
+function doPost(e) {
+  let data;
+  try {
+    data = JSON.parse(e.postData.contents);
+  } catch (err) {
+    return jsonOut_({ ok: false, error: 'Invalid request body' });
+  }
+  return recordOrder_(data);
 }
