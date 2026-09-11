@@ -71,7 +71,12 @@ async function submitOrder(payload) {
     body: JSON.stringify(payload)
   });
   if (!res.ok) throw new Error('Could not place order — please try again or contact us directly.');
-  return res.json();
+  const result = await res.json();
+  // order-handler.gs responds with HTTP 200 even when it caught an
+  // internal error (e.g. the product catalog was temporarily unreachable)
+  // — check its own ok field too, not just the HTTP status.
+  if (result.ok === false) throw new Error(result.error || 'Could not place order — please try again or contact us directly.');
+  return result;
 }
 
 function renderPaymentStep(orderId, subtotal) {

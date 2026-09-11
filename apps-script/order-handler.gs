@@ -29,12 +29,25 @@ const PRODUCTS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyEuFDv68Pf5W
 
 const MAX_QTY_PER_LINE = 50;
 
+// Retries a few times with a short pause — PRODUCTS_ENDPOINT has been
+// observed to intermittently return an HTML error page instead of JSON
+// for a request or two before recovering (a Google Apps Script platform
+// issue, not a bug in this code). Returns null if every attempt fails,
+// rather than letting a JSON.parse exception crash the whole order.
 function fetchCatalogById_() {
-  const res = UrlFetchApp.fetch(PRODUCTS_ENDPOINT + '?action=products', { muteHttpExceptions: true });
-  const products = JSON.parse(res.getContentText());
-  const byId = {};
-  products.forEach(p => { byId[p.id] = p; });
-  return byId;
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = UrlFetchApp.fetch(PRODUCTS_ENDPOINT + '?action=products', { muteHttpExceptions: true });
+      const products = JSON.parse(res.getContentText());
+      const byId = {};
+      products.forEach(p => { byId[p.id] = p; });
+      return byId;
+    } catch (err) {
+      if (attempt < maxAttempts) Utilities.sleep(1000);
+    }
+  }
+  return null;
 }
 
 // Recomputes each line's price from the real catalog (ignoring whatever
@@ -42,9 +55,18 @@ function fetchCatalogById_() {
 // display string. A line whose id isn't found in the catalog anymore is
 // kept but flagged, with its price excluded from the subtotal, so Jun Min
 // notices it during manual payment verification instead of silently
-// trusting an arbitrary client-supplied amount.
+// trusting an arbitrary client-supplied amount. If the catalog itself is
+// unreachable after retrying, the order is still recorded (never silently
+// dropped) with subtotal 0 and every line flagged for manual pricing.
 function priceOrder_(items) {
   const catalog = fetchCatalogById_();
+  if (!catalog) {
+    const parts = (items || []).map(line => {
+      const qty = Math.max(0, Math.min(MAX_QTY_PER_LINE, Math.floor(Number(line.qty)) || 0));
+      return `${qty}x [id:${line.id}] (catalog unreachable — price manually)`;
+    });
+    return { subtotal: 0, itemsText: parts.join('; '), flagged: true };
+  }
   let subtotal = 0;
   let flagged = false;
   const parts = (items || []).map(line => {
@@ -63,31 +85,40 @@ function priceOrder_(items) {
 }
 
 function doPost(e) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  const data = JSON.parse(e.postData.contents);
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
-  if (sheet.getLastRow() === 0) {
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow([
+        'Order ID', 'Submitted At', 'Name', 'Phone', 'Email',
+        'Items', 'Subtotal (RM)', 'Payment Status', 'Notes'
+      ]);
+    }
+
+    const priced = priceOrder_(data.items);
+    const notes = (data.notes || '') + (priced.flagged ? ' [NEEDS REVIEW: contains an unrecognised product]' : '');
+
     sheet.appendRow([
-      'Order ID', 'Submitted At', 'Name', 'Phone', 'Email',
-      'Items', 'Subtotal (RM)', 'Payment Status', 'Notes'
+      data.orderId || '',
+      data.submittedAt || new Date().toISOString(),
+      data.name || '',
+      data.phone || '',
+      data.email || '',
+      priced.itemsText,
+      priced.subtotal,
+      'Pending',
+      notes.trim()
     ]);
+
+    return ContentService.createTextOutput(JSON.stringify({ ok: true, orderId: data.orderId, subtotal: priced.subtotal }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    // Never let an unexpected error surface as Apps Script's raw crash
+    // page (customers would see a confusing wall of text) — always
+    // respond with clean JSON so js/checkout.js's own error handling
+    // (the WhatsApp fallback) takes over instead.
+    return ContentService.createTextOutput(JSON.stringify({ ok: false, error: String(err) }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
-
-  const priced = priceOrder_(data.items);
-  const notes = (data.notes || '') + (priced.flagged ? ' [NEEDS REVIEW: contains an unrecognised product]' : '');
-
-  sheet.appendRow([
-    data.orderId || '',
-    data.submittedAt || new Date().toISOString(),
-    data.name || '',
-    data.phone || '',
-    data.email || '',
-    priced.itemsText,
-    priced.subtotal,
-    'Pending',
-    notes.trim()
-  ]);
-
-  return ContentService.createTextOutput(JSON.stringify({ ok: true, orderId: data.orderId, subtotal: priced.subtotal }))
-    .setMimeType(ContentService.MimeType.JSON);
 }
