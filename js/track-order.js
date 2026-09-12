@@ -64,4 +64,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('to-order-id').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') checkOrderStatus();
   });
+
+  // Arriving from the "Track this order" link on the payment confirmation
+  // page — the order ID is already known, so skip retyping it.
+  const idFromUrl = new URLSearchParams(location.search).get('id');
+  if (idFromUrl) {
+    document.getElementById('to-order-id').value = idFromUrl;
+    checkOrderStatus();
+  }
 });

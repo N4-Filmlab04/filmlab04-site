@@ -527,6 +527,12 @@ function showGateError(message) {
 async function handleCredentialResponse(response) {
   __idToken = response.credential;
   showGateError('');
+  // The verification round-trip (this Apps Script deployment, which then
+  // calls Google's tokeninfo endpoint itself) can take several seconds —
+  // show something so it doesn't look stuck, same fix as checkout's
+  // "Placing order..." button.
+  const statusEl = document.getElementById('admin-gate-status');
+  if (statusEl) statusEl.hidden = false;
   try {
     const res = await fetch(`${ADMIN_ENDPOINT}?action=whoami&idToken=${encodeURIComponent(__idToken)}`);
     const data = await res.json();
@@ -539,6 +545,8 @@ async function handleCredentialResponse(response) {
     showSignedIn(data.email);
   } catch (err) {
     showGateError('Could not verify sign-in. Please check your connection and try again.');
+  } finally {
+    if (statusEl) statusEl.hidden = true;
   }
 }
 

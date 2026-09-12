@@ -62,7 +62,7 @@ const GOOGLE_CLIENT_ID = 'PASTE_YOUR_OAUTH_CLIENT_ID_HERE';
 
 // The spreadsheet ID of the existing "Filmlab04 Orders" sheet (from its URL:
 // docs.google.com/spreadsheets/d/THIS_PART/edit).
-const ORDERS_SHEET_ID = 'PASTE_FILMLAB04_ORDERS_SHEET_ID_HERE';
+const ORDERS_SHEET_ID = '1Wb6TD2hgpkbT6tOyFdUTADhOZxWVkNqPB_A1Y2P_vFI';
 
 const HEADERS = ['ID', 'Brand', 'Name', 'Category', 'Price', 'Currency', 'Quantity', 'Data'];
 

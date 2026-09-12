@@ -1,8 +1,8 @@
 /** Drives the checkout flow on cart.html: collects customer details, submits
  * the order to a Google Apps Script Web App, and shows payment instructions
- * (DuitNow QR + bank transfer — Jun Min confirms payment manually against
- * his bank statement, there is no automated payment gateway). Depends on
- * cart.js for getCart/loadProducts/escapeHtml/showToast/CART_KEY.
+ * (bank transfer — Jun Min confirms payment manually against his bank
+ * statement, there is no automated payment gateway). Depends on cart.js for
+ * getCart/loadProducts/escapeHtml/showToast/CART_KEY.
  */
 
 const ORDER_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxS0Phx3Kem5VgXL5HnOHW4fSuUiR9Jr3kN3dA_N_FjvArdvp4Wx6DTp88cQ7vuA72o/exec';
@@ -12,8 +12,9 @@ const ORDER_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxS0Phx3Kem5VgXL
 // by wa.me links.
 const WHATSAPP_NUMBER = '6044389878';
 
+// QR payment (DuitNow) is disabled for now — bank transfer only until Jun
+// Min is ready to bring the QR option back.
 const PAYMENT_INFO = {
-  qrImage: 'images/payment-qr.jpg', // DuitNow QR — N4 Camera x Alor Setar
   bankName: 'Maybank',
   accountNumber: '5572 2321 8483',
   accountHolder: 'N4 Camera Store (Retail) Sdn. Bhd.'
@@ -62,9 +63,16 @@ async function submitOrder(payload) {
     // POST once the Google Sheet + Apps Script Web App is set up.
     return { ok: true, demo: true };
   }
-  if (await checkoutMaintenanceMode()) {
-    throw new Error('Checkout is temporarily under maintenance.');
-  }
+
+  // Apps Script /exec endpoints are slow (redirect hop + occasional cold
+  // start), so the maintenance check and the actual submission are fired
+  // together instead of one after another — that was doubling the wait
+  // before the payment step could show. The submission request goes out
+  // right away; if the maintenance check comes back true we just ignore
+  // its result and show the WhatsApp fallback (worst case the order still
+  // gets recorded in the background during a maintenance window, which is
+  // harmless — better than losing it).
+  //
   // Submitted over GET, not POST — real-world testing found POST requests
   // to this Apps Script deployment unreliable (a Google-side platform
   // issue) while GET has consistently routed and executed correctly, so
@@ -82,33 +90,36 @@ async function submitOrder(payload) {
     submittedAt: payload.submittedAt,
     items: JSON.stringify(payload.items)
   });
-  const res = await fetch(`${ORDER_ENDPOINT}?${params.toString()}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Could not place order — please try again or contact us directly.');
-  const result = await res.json();
-  // order-handler.gs responds with HTTP 200 even when it caught an
-  // internal error (e.g. the product catalog was temporarily unreachable)
-  // — check its own ok field too, not just the HTTP status.
-  if (result.ok === false) throw new Error(result.error || 'Could not place order — please try again or contact us directly.');
-  return result;
+  const submissionPromise = fetch(`${ORDER_ENDPOINT}?${params.toString()}`, { cache: 'no-store' })
+    .then(async res => {
+      if (!res.ok) throw new Error('Could not place order — please try again or contact us directly.');
+      const result = await res.json();
+      // order-handler.gs responds with HTTP 200 even when it caught an
+      // internal error (e.g. the product catalog was temporarily
+      // unreachable) — check its own ok field too, not just the HTTP status.
+      if (result.ok === false) throw new Error(result.error || 'Could not place order — please try again or contact us directly.');
+      return result;
+    });
+  const maintenancePromise = checkoutMaintenanceMode();
+
+  if (await maintenancePromise) {
+    submissionPromise.catch(() => {}); // don't leave an unhandled rejection
+    throw new Error('Checkout is temporarily under maintenance.');
+  }
+  return submissionPromise;
 }
 
 function renderPaymentStep(orderId, subtotal) {
   document.getElementById('pay-order-id').textContent = orderId;
   document.getElementById('pay-amount').textContent = subtotal.toFixed(2);
 
-  // Reset to the QR tab in case a previous order left the bank tab active.
-  document.querySelectorAll('#payment-method-tabs .segmented-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector('#payment-method-tabs .segmented-btn[data-pay-panel="qr"]')?.classList.add('active');
-  document.getElementById('pay-panel-qr').hidden = false;
-  document.getElementById('pay-panel-bank').hidden = true;
-
-  document.getElementById('payment-qr-box').innerHTML = PAYMENT_INFO.qrImage
-    ? `<img src="${PAYMENT_INFO.qrImage}" alt="Payment QR code" style="display:block; width:100%;">`
-    : '<div class="product-card-img" style="aspect-ratio:1;">QR code coming soon</div>';
-
   document.getElementById('pay-bank').textContent = PAYMENT_INFO.bankName || '—';
   document.getElementById('pay-account').textContent = PAYMENT_INFO.accountNumber || '—';
   document.getElementById('pay-holder').textContent = PAYMENT_INFO.accountHolder || '—';
+
+  // Pre-fill the order ID so customers don't have to copy/retype it.
+  const trackLink = document.getElementById('pay-track-link');
+  if (trackLink) trackLink.href = `track-order.html?id=${encodeURIComponent(orderId)}`;
 }
 
 function initCheckout() {
@@ -119,15 +130,6 @@ function initCheckout() {
   toDetailsBtn.addEventListener('click', () => {
     document.getElementById('step-cart').style.display = 'none';
     document.getElementById('step-details').style.display = 'block';
-  });
-
-  document.getElementById('payment-method-tabs')?.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-pay-panel]');
-    if (!btn) return;
-    document.querySelectorAll('#payment-method-tabs .segmented-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('pay-panel-qr').hidden = btn.dataset.payPanel !== 'qr';
-    document.getElementById('pay-panel-bank').hidden = btn.dataset.payPanel !== 'bank';
   });
 
   placeOrderBtn.addEventListener('click', async () => {
@@ -169,7 +171,13 @@ function initCheckout() {
       submittedAt: new Date().toISOString()
     };
 
+    // The Apps Script backend can take several seconds to respond (it's a
+    // Google-side quirk, not something we control), so swap the button
+    // label to something that changed on click — otherwise a disabled
+    // button with unchanged text reads as "did nothing happened".
+    const originalLabel = placeOrderBtn.textContent;
     placeOrderBtn.disabled = true;
+    placeOrderBtn.textContent = 'Placing order…';
     try {
       const result = await submitOrder(payload);
       localStorage.setItem(CART_KEY, '[]');
@@ -185,6 +193,7 @@ function initCheckout() {
       showOrderFailedNotice(items, subtotal);
     } finally {
       placeOrderBtn.disabled = false;
+      placeOrderBtn.textContent = originalLabel;
     }
   });
 }
