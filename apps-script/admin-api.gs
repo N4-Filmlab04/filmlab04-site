@@ -161,7 +161,8 @@ function salesSummary_() {
 // Sheet row index (1-based, matching getRange) of the order with this
 // orderId, or -1 if not found. Column A holds the order ID.
 function findOrderRow_(sheet, orderId) {
-  const ids = sheet.getRange(2, 1, Math.max(sheet.getLastRow() - 1, 0), 1).getValues();
+  if (sheet.getLastRow() < 2) return -1; // header row only, no orders yet
+  const ids = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues();
   for (let i = 0; i < ids.length; i++) {
     if (String(ids[i][0]) === String(orderId)) return i + 2;
   }
