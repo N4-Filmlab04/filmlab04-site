@@ -98,8 +98,21 @@ function priceOrder_(items) {
 // Script's raw crash page (customers would see a confusing wall of text)
 // — always responds with clean JSON so js/checkout.js's own error
 // handling (the WhatsApp fallback) takes over instead.
+// Leftover diagnostic test order from an earlier debugging session — some
+// still-unidentified caller keeps resubmitting this exact payload, which
+// kept polluting the Orders sheet no matter how many times it was deleted
+// manually. Block it here at the source rather than chasing the caller
+// further; responds ok:true (not an error) so whatever's polling this
+// doesn't start retrying more aggressively.
+const BLOCKED_ORDER_IDS = ['FL04-WATCHTEST2'];
+const BLOCKED_PHONES = ['60000000000'];
+
 function recordOrder_(data) {
   try {
+    if (BLOCKED_ORDER_IDS.includes(data.orderId) || BLOCKED_PHONES.includes(String(data.phone || ''))) {
+      return jsonOut_({ ok: true, orderId: data.orderId, subtotal: 0, blocked: true });
+    }
+
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
     if (sheet.getLastRow() === 0) {
@@ -140,7 +153,11 @@ function jsonOut_(obj) {
 // just as query parameters; `items` is a JSON-stringified array since
 // query params are flat strings.
 function doGet(e) {
-  const action = e.parameter.action || 'submit-order';
+  // Do NOT default a missing/empty action to 'submit-order' — any request
+  // that hits this URL without the expected params (a health check, a
+  // browser prefetch, a stray ping) would otherwise silently record a
+  // phantom order. Require the caller to explicitly ask for submit-order.
+  const action = e.parameter.action;
   if (action !== 'submit-order') {
     return jsonOut_({ error: 'Unknown action' });
   }
