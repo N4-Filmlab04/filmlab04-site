@@ -119,7 +119,7 @@ async function submitOrder(payload) {
   return submissionPromise;
 }
 
-function renderPaymentStep(orderId, subtotal, deliveryMethod) {
+function renderPaymentStep(orderId, subtotal, deliveryMethod, items) {
   document.getElementById('pay-order-id').textContent = orderId;
   document.getElementById('pay-amount').textContent = subtotal.toFixed(2);
 
@@ -139,7 +139,8 @@ function renderPaymentStep(orderId, subtotal, deliveryMethod) {
   // payment screenshot themselves once WhatsApp opens.
   const waLink = document.getElementById('pay-whatsapp-link');
   if (waLink) {
-    const text = `Hi, here's my payment receipt for order ${orderId} — RM${subtotal.toFixed(2)}.`;
+    const itemsLine = (items || []).map(i => `${i.qty}x ${i.name}${i.variant ? ' (' + i.variant + ')' : ''}`).join(', ');
+    const text = `Hi, here's my payment receipt for order ${orderId}${itemsLine ? ` (${itemsLine})` : ''} — RM${subtotal.toFixed(2)}.`;
     waLink.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
   }
 }
@@ -231,7 +232,7 @@ function initCheckout() {
       // The backend re-prices from the live catalog and is authoritative —
       // fall back to the locally computed subtotal only in the no-backend
       // demo path, where result.subtotal doesn't exist.
-      renderPaymentStep(orderId, typeof result.subtotal === 'number' ? result.subtotal : subtotal, deliveryMethod);
+      renderPaymentStep(orderId, typeof result.subtotal === 'number' ? result.subtotal : subtotal, deliveryMethod, items);
       document.getElementById('step-payment').style.display = 'block';
       if (result.demo) showToast('Order placed (demo — not saved yet)');
     } catch (err) {
