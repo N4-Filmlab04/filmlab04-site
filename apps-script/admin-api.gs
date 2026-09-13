@@ -147,7 +147,9 @@ function salesSummary_() {
       items: row[5],
       subtotal: subtotal,
       paymentStatus: row[7],
-      notes: row[8]
+      notes: row[8],
+      deliveryMethod: row[9] || 'Self-pickup',
+      address: row[10] || ''
     });
   }
   orders.reverse(); // most recent first

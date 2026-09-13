@@ -87,6 +87,8 @@ async function submitOrder(payload) {
     phone: payload.phone,
     email: payload.email,
     notes: payload.notes,
+    deliveryMethod: payload.deliveryMethod,
+    address: payload.address,
     submittedAt: payload.submittedAt,
     items: JSON.stringify(payload.items)
   });
@@ -132,6 +134,20 @@ function initCheckout() {
     document.getElementById('step-details').style.display = 'block';
   });
 
+  // Delivery vs self-pickup — same segmented-control pattern used on
+  // services.html's drop-off form.
+  const deliveryGroup = document.querySelector('.segmented[data-field="delivery"]');
+  const addressField = document.getElementById('co-address-field');
+  deliveryGroup?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.segmented-btn');
+    if (!btn) return;
+    deliveryGroup.querySelectorAll('.segmented-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const isDelivery = btn.dataset.value === 'Delivery';
+    addressField.hidden = !isDelivery;
+    if (!isDelivery) document.getElementById('co-address').value = '';
+  });
+
   placeOrderBtn.addEventListener('click', async () => {
     showCheckoutError('');
     hideOrderFailedNotice();
@@ -139,9 +155,15 @@ function initCheckout() {
     const phone = document.getElementById('co-phone').value.trim();
     const email = document.getElementById('co-email').value.trim();
     const notes = document.getElementById('co-notes').value.trim();
+    const deliveryMethod = deliveryGroup?.querySelector('.segmented-btn.active')?.dataset.value || 'Self-pickup';
+    const address = document.getElementById('co-address').value.trim();
 
     if (!name || !phone || !email) {
       showCheckoutError('Please fill in your name, phone number, and email.');
+      return;
+    }
+    if (deliveryMethod === 'Delivery' && !address) {
+      showCheckoutError('Please enter your delivery address, or switch to self-pickup.');
       return;
     }
 
@@ -166,6 +188,8 @@ function initCheckout() {
       phone,
       email,
       notes,
+      deliveryMethod,
+      address: deliveryMethod === 'Delivery' ? address : '',
       items,
       subtotal: subtotal.toFixed(2),
       submittedAt: new Date().toISOString()

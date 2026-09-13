@@ -385,6 +385,7 @@ let __salesStats = { totalOrders: 0, totalRevenue: 0 };
 
 function salesOrderRow(o) {
   const paid = o.paymentStatus === 'Paid';
+  const isDelivery = o.deliveryMethod === 'Delivery';
   return `
     <tr>
       <td>${escapeHtml(o.orderId)}</td>
@@ -393,6 +394,7 @@ function salesOrderRow(o) {
       <td>${escapeHtml(o.phone)}</td>
       <td>${escapeHtml(o.items)}</td>
       <td>RM${Number(o.subtotal).toFixed(2)}</td>
+      <td>${isDelivery ? `Ship: ${escapeHtml(o.address || '—')}` : 'Self-pickup'}</td>
       <td><span class="badge ${paid ? 'badge-in-stock' : 'badge-pending'}">${escapeHtml(o.paymentStatus || 'Pending')}</span></td>
       <td>${paid ? '' : `<button class="btn btn-secondary btn-sm" data-mark-paid="${escapeHtml(o.orderId)}">Mark as paid</button>`}</td>
     </tr>`;
@@ -417,8 +419,8 @@ function renderSalesTable() {
     </div>
     <div class="admin-table-scroll">
       <table class="admin-table">
-        <thead><tr><th>Order ID</th><th>Time</th><th>Customer</th><th>Phone</th><th>Items</th><th>Amount</th><th>Status</th><th></th></tr></thead>
-        <tbody>${filtered.map(salesOrderRow).join('') || `<tr><td colspan="8" class="muted">${__salesOrders.length ? 'No orders match this search' : 'No orders yet'}</td></tr>`}</tbody>
+        <thead><tr><th>Order ID</th><th>Time</th><th>Customer</th><th>Phone</th><th>Items</th><th>Amount</th><th>Delivery</th><th>Status</th><th></th></tr></thead>
+        <tbody>${filtered.map(salesOrderRow).join('') || `<tr><td colspan="9" class="muted">${__salesOrders.length ? 'No orders match this search' : 'No orders yet'}</td></tr>`}</tbody>
       </table>
     </div>`;
 

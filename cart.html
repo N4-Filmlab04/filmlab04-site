@@ -50,6 +50,16 @@
     <label class="form-field">Email Address
       <input type="email" id="co-email" placeholder="example@gmail.com" autocomplete="email" required>
     </label>
+    <label class="form-field">Delivery</label>
+    <div class="segmented" data-field="delivery" style="margin-bottom:var(--space-4);">
+      <button type="button" class="segmented-btn active" data-value="Self-pickup">Self-pickup at store</button>
+      <button type="button" class="segmented-btn" data-value="Delivery">Ship to my address</button>
+    </div>
+    <div id="co-address-field" hidden>
+      <label class="form-field">Delivery Address
+        <textarea id="co-address" rows="2" placeholder="Full address, including postcode"></textarea>
+      </label>
+    </div>
     <label class="form-field">Notes <span class="muted">(optional)</span>
       <textarea id="co-notes" rows="2" placeholder="Anything we should know..."></textarea>
     </label>

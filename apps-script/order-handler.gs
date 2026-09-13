@@ -118,7 +118,8 @@ function recordOrder_(data) {
     if (sheet.getLastRow() === 0) {
       sheet.appendRow([
         'Order ID', 'Submitted At', 'Name', 'Phone', 'Email',
-        'Items', 'Subtotal (RM)', 'Payment Status', 'Notes'
+        'Items', 'Subtotal (RM)', 'Payment Status', 'Notes',
+        'Delivery Method', 'Address'
       ]);
     }
 
@@ -134,7 +135,9 @@ function recordOrder_(data) {
       priced.itemsText,
       priced.subtotal,
       'Pending',
-      notes.trim()
+      notes.trim(),
+      data.deliveryMethod || 'Self-pickup',
+      data.address || ''
     ]);
 
     return jsonOut_({ ok: true, orderId: data.orderId, subtotal: priced.subtotal });
@@ -174,6 +177,8 @@ function doGet(e) {
     phone: e.parameter.phone,
     email: e.parameter.email,
     notes: e.parameter.notes,
+    deliveryMethod: e.parameter.deliveryMethod,
+    address: e.parameter.address,
     items: items
   });
 }
