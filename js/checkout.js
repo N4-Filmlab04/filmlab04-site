@@ -133,6 +133,15 @@ function renderPaymentStep(orderId, subtotal, deliveryMethod) {
   // Pre-fill the order ID so customers don't have to copy/retype it.
   const trackLink = document.getElementById('pay-track-link');
   if (trackLink) trackLink.href = `track-order.html?id=${encodeURIComponent(orderId)}`;
+
+  // wa.me links can't attach an image, so this just opens the chat with
+  // the order details pre-filled — the customer still has to attach the
+  // payment screenshot themselves once WhatsApp opens.
+  const waLink = document.getElementById('pay-whatsapp-link');
+  if (waLink) {
+    const text = `Hi, here's my payment receipt for order ${orderId} — RM${subtotal.toFixed(2)}.`;
+    waLink.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+  }
 }
 
 function initCheckout() {
