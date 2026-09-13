@@ -12,6 +12,13 @@ const ORDER_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxS0Phx3Kem5VgXL
 // by wa.me links.
 const WHATSAPP_NUMBER = '6044389878';
 
+// Flat delivery fee added when the customer chooses "Ship to my address"
+// instead of self-pickup. Must match DELIVERY_FEE in order-handler.gs —
+// the server is the authoritative source (it re-prices every order from
+// the live catalog and never trusts the client), this local copy is only
+// used for the WhatsApp fallback text and the no-backend demo path.
+const DELIVERY_FEE = 12;
+
 // QR payment (DuitNow) is disabled for now — bank transfer only until Jun
 // Min is ready to bring the QR option back.
 const PAYMENT_INFO = {
@@ -30,9 +37,10 @@ function showCheckoutError(message) {
 // unreachable) — as opposed to a plain form-validation error, this gives
 // the customer a way to still get their order through, with their cart
 // pre-filled into the WhatsApp message so they don't have to retype it.
-function showOrderFailedNotice(items, subtotal) {
+function showOrderFailedNotice(items, subtotal, deliveryMethod, address) {
   const lines = items.map(i => `${i.qty}x ${i.name}${i.variant ? ' (' + i.variant + ')' : ''}`).join('\n');
-  const text = `Hi, I'd like to place an order — our online checkout isn't working right now:\n\n${lines}\n\nSubtotal: RM${subtotal.toFixed(2)}`;
+  const deliveryLine = deliveryMethod === 'Delivery' ? `\n\nDeliver to: ${address}` : '\n\nSelf-pickup at store';
+  const text = `Hi, I'd like to place an order — our online checkout isn't working right now:\n\n${lines}\n\nSubtotal: RM${subtotal.toFixed(2)}${deliveryLine}`;
   document.getElementById('co-whatsapp-link').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
   document.getElementById('co-order-failed').hidden = false;
 }
@@ -111,9 +119,12 @@ async function submitOrder(payload) {
   return submissionPromise;
 }
 
-function renderPaymentStep(orderId, subtotal) {
+function renderPaymentStep(orderId, subtotal, deliveryMethod) {
   document.getElementById('pay-order-id').textContent = orderId;
   document.getElementById('pay-amount').textContent = subtotal.toFixed(2);
+
+  const feeNote = document.getElementById('pay-delivery-note');
+  if (feeNote) feeNote.hidden = deliveryMethod !== 'Delivery';
 
   document.getElementById('pay-bank').textContent = PAYMENT_INFO.bankName || '—';
   document.getElementById('pay-account').textContent = PAYMENT_INFO.accountNumber || '—';
@@ -180,6 +191,7 @@ function initCheckout() {
       // for the "no backend configured" demo path.
       return { id: p.id, name: `${p.brand} ${p.name}`, variant: line.variant, qty: line.qty, price: p.price };
     }).filter(Boolean);
+    if (deliveryMethod === 'Delivery') subtotal += DELIVERY_FEE;
 
     const orderId = 'FL04-' + Math.random().toString(36).slice(2, 8).toUpperCase();
     const payload = {
@@ -210,11 +222,11 @@ function initCheckout() {
       // The backend re-prices from the live catalog and is authoritative —
       // fall back to the locally computed subtotal only in the no-backend
       // demo path, where result.subtotal doesn't exist.
-      renderPaymentStep(orderId, typeof result.subtotal === 'number' ? result.subtotal : subtotal);
+      renderPaymentStep(orderId, typeof result.subtotal === 'number' ? result.subtotal : subtotal, deliveryMethod);
       document.getElementById('step-payment').style.display = 'block';
       if (result.demo) showToast('Order placed (demo — not saved yet)');
     } catch (err) {
-      showOrderFailedNotice(items, subtotal);
+      showOrderFailedNotice(items, subtotal, deliveryMethod, address);
     } finally {
       placeOrderBtn.disabled = false;
       placeOrderBtn.textContent = originalLabel;

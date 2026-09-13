@@ -38,6 +38,12 @@ const PRODUCTS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyW4XSFes9LoC
 
 const MAX_QTY_PER_LINE = 50;
 
+// Flat fee added when the customer chooses "Ship to my address" instead
+// of self-pickup. This is the authoritative value — js/checkout.js has
+// its own copy only for the WhatsApp fallback text and the no-backend
+// demo path, never trusted for the real subtotal.
+const DELIVERY_FEE = 12;
+
 // Retries a few times with a short pause — PRODUCTS_ENDPOINT has been
 // observed to intermittently return an HTML error page instead of JSON
 // for a request or two before recovering (a Google Apps Script platform
@@ -125,6 +131,9 @@ function recordOrder_(data) {
 
     const priced = priceOrder_(data.items);
     const notes = (data.notes || '') + (priced.flagged ? ' [NEEDS REVIEW: contains an unrecognised product]' : '');
+    const isDelivery = data.deliveryMethod === 'Delivery';
+    const subtotal = priced.subtotal + (isDelivery ? DELIVERY_FEE : 0);
+    const itemsText = priced.itemsText + (isDelivery ? `; Delivery fee RM${DELIVERY_FEE.toFixed(2)}` : '');
 
     sheet.appendRow([
       data.orderId || '',
@@ -132,15 +141,15 @@ function recordOrder_(data) {
       data.name || '',
       data.phone || '',
       data.email || '',
-      priced.itemsText,
-      priced.subtotal,
+      itemsText,
+      subtotal,
       'Pending',
       notes.trim(),
       data.deliveryMethod || 'Self-pickup',
       data.address || ''
     ]);
 
-    return jsonOut_({ ok: true, orderId: data.orderId, subtotal: priced.subtotal });
+    return jsonOut_({ ok: true, orderId: data.orderId, subtotal: subtotal });
   } catch (err) {
     return jsonOut_({ ok: false, error: String(err) });
   }
