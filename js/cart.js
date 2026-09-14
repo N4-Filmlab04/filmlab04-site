@@ -148,7 +148,7 @@ async function renderCartDrawer() {
     const variantArg = line.variant ? `, '${escapeJsString(line.variant)}'` : ', null';
     return `
       <div class="cart-line">
-        <div class="cart-line-thumb"></div>
+        <div class="cart-line-thumb">${p.image ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.brand)} ${escapeHtml(p.name)}">` : ''}</div>
         <div class="cart-line-info">
           <div class="name">${escapeHtml(p.brand)} ${escapeHtml(p.name)}${line.variant ? ` — ${escapeHtml(line.variant)}` : ''}</div>
           <div class="meta">${escapeHtml(p.currency)}${p.price.toFixed(2)} each</div>
