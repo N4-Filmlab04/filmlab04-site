@@ -21,6 +21,18 @@ function escapeJsString(str) {
   return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
+// Colour variants (e.g. Kodak EC35) each carry their own photo — show that
+// instead of the product's default image when a specific colour was
+// picked, falling back to the default if the variant has no photo of its
+// own or the cart line predates variants.
+function lineImage(p, variant) {
+  if (variant && p.variants) {
+    const v = p.variants.find(v => v.color === variant);
+    if (v && v.image) return v.image;
+  }
+  return p.image;
+}
+
 function getCart() {
   try {
     return JSON.parse(localStorage.getItem(CART_KEY)) || [];
@@ -148,7 +160,7 @@ async function renderCartDrawer() {
     const variantArg = line.variant ? `, '${escapeJsString(line.variant)}'` : ', null';
     return `
       <div class="cart-line">
-        <div class="cart-line-thumb">${p.image ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.brand)} ${escapeHtml(p.name)}">` : ''}</div>
+        <div class="cart-line-thumb">${(() => { const img = lineImage(p, line.variant); return img ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(p.brand)} ${escapeHtml(p.name)}">` : ''; })()}</div>
         <div class="cart-line-info">
           <div class="name">${escapeHtml(p.brand)} ${escapeHtml(p.name)}${line.variant ? ` — ${escapeHtml(line.variant)}` : ''}</div>
           <div class="meta">${escapeHtml(p.currency)}${p.price.toFixed(2)} each</div>
