@@ -203,6 +203,11 @@ function initCheckout() {
     }).filter(Boolean);
     if (deliveryMethod === 'Delivery') subtotal += DELIVERY_FEE;
 
+    // A placeholder only — the real, sequential tracking number
+    // (FL04-000000, FL04-000001, ...) is assigned server-side in
+    // order-handler.gs and used instead once the order succeeds. This
+    // local one only shows up in the WhatsApp fallback text if the
+    // backend never actually recorded the order.
     const orderId = 'FL04-' + Math.random().toString(36).slice(2, 8).toUpperCase();
     const payload = {
       orderId,
@@ -229,10 +234,11 @@ function initCheckout() {
       localStorage.setItem(CART_KEY, '[]');
       renderCartBadge();
       document.getElementById('step-details').style.display = 'none';
-      // The backend re-prices from the live catalog and is authoritative —
-      // fall back to the locally computed subtotal only in the no-backend
-      // demo path, where result.subtotal doesn't exist.
-      renderPaymentStep(orderId, typeof result.subtotal === 'number' ? result.subtotal : subtotal, deliveryMethod, items);
+      // The backend assigns the real sequential order/tracking number and
+      // re-prices from the live catalog — both are authoritative. Fall
+      // back to the locally generated ones only in the no-backend demo
+      // path, where result.orderId/subtotal don't exist.
+      renderPaymentStep(result.orderId || orderId, typeof result.subtotal === 'number' ? result.subtotal : subtotal, deliveryMethod, items);
       document.getElementById('step-payment').style.display = 'block';
       if (result.demo) showToast('Order placed (demo — not saved yet)');
     } catch (err) {

@@ -44,6 +44,29 @@ const MAX_QTY_PER_LINE = 50;
 // demo path, never trusted for the real subtotal.
 const DELIVERY_FEE = 12;
 
+const ORDER_ID_PREFIX = 'FL04-';
+const ORDER_ID_DIGITS = 6;
+
+// Sequential, human-friendly order/tracking numbers (FL04-000000,
+// FL04-000001, ...) instead of a random suffix. The client's own
+// generated ID is never trusted for this — same "never trust the
+// client" posture as pricing — this is the one source of truth. A
+// script lock avoids two concurrent submissions getting the same
+// number.
+function nextOrderId_() {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const last = parseInt(props.getProperty('lastOrderNumber'), 10);
+    const next = isNaN(last) ? 0 : last + 1;
+    props.setProperty('lastOrderNumber', String(next));
+    return ORDER_ID_PREFIX + String(next).padStart(ORDER_ID_DIGITS, '0');
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 // Retries a few times with a short pause — PRODUCTS_ENDPOINT has been
 // observed to intermittently return an HTML error page instead of JSON
 // for a request or two before recovering (a Google Apps Script platform
@@ -129,6 +152,7 @@ function recordOrder_(data) {
       ]);
     }
 
+    const orderId = nextOrderId_();
     const priced = priceOrder_(data.items);
     const notes = (data.notes || '') + (priced.flagged ? ' [NEEDS REVIEW: contains an unrecognised product]' : '');
     const isDelivery = data.deliveryMethod === 'Delivery';
@@ -136,7 +160,7 @@ function recordOrder_(data) {
     const itemsText = priced.itemsText + (isDelivery ? `; Delivery fee RM${DELIVERY_FEE.toFixed(2)}` : '');
 
     sheet.appendRow([
-      data.orderId || '',
+      orderId,
       data.submittedAt || new Date().toISOString(),
       data.name || '',
       data.phone || '',
@@ -149,7 +173,7 @@ function recordOrder_(data) {
       data.address || ''
     ]);
 
-    return jsonOut_({ ok: true, orderId: data.orderId, subtotal: subtotal });
+    return jsonOut_({ ok: true, orderId: orderId, subtotal: subtotal });
   } catch (err) {
     return jsonOut_({ ok: false, error: String(err) });
   }
