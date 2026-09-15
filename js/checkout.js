@@ -38,7 +38,9 @@ function showCheckoutError(message) {
 // the customer a way to still get their order through, with their cart
 // pre-filled into the WhatsApp message so they don't have to retype it.
 function showOrderFailedNotice(items, subtotal, deliveryMethod, address) {
-  const lines = items.map(i => `${i.qty}x ${i.name}${i.variant ? ' (' + i.variant + ')' : ''}`).join('\n');
+  const lines = items.map((i, idx) =>
+    `${idx + 1}. ${i.name}${i.variant ? ' (' + i.variant + ')' : ''} @ RM${i.price.toFixed(2)} x${i.qty}`
+  ).join('\n');
   const deliveryLine = deliveryMethod === 'Delivery' ? `\n\nDeliver to: ${address}` : '\n\nSelf-pickup at store';
   const text = `Hi, I'd like to place an order — our online checkout isn't working right now:\n\n${lines}\n\nSubtotal: RM${subtotal.toFixed(2)}${deliveryLine}`;
   document.getElementById('co-whatsapp-link').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
@@ -139,8 +141,12 @@ function renderPaymentStep(orderId, subtotal, deliveryMethod, items) {
   // payment screenshot themselves once WhatsApp opens.
   const waLink = document.getElementById('pay-whatsapp-link');
   if (waLink) {
-    const itemsLine = (items || []).map(i => `${i.qty}x ${i.name}${i.variant ? ' (' + i.variant + ')' : ''}`).join(', ');
-    const text = `Hi, here's my payment receipt for order ${orderId}${itemsLine ? ` (${itemsLine})` : ''} — RM${subtotal.toFixed(2)}.`;
+    // Numbered, one-per-line — matches the format order-handler.gs writes
+    // into the Orders sheet's Items column.
+    const itemsLines = (items || []).map((i, idx) =>
+      `${idx + 1}. ${i.name}${i.variant ? ' (' + i.variant + ')' : ''} @ RM${i.price.toFixed(2)} x${i.qty}`
+    ).join('\n');
+    const text = `Hi, here's my payment receipt for order ${orderId}:\n${itemsLines}\n\nTotal: RM${subtotal.toFixed(2)}`;
     waLink.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
   }
 }
