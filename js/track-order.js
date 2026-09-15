@@ -32,7 +32,7 @@ function renderOrderResult(order) {
         <span class="badge ${paid ? 'badge-in-stock' : 'badge-pending'}">${escapeHtml(order.paymentStatus || 'Pending')}</span>
       </div>
       <p style="margin-top:8px;">${escapeHtml(formatOrderDate(order.submittedAt))}</p>
-      <p style="margin-top:8px;">${escapeHtml(order.items)}</p>
+      <p style="margin-top:8px; white-space:pre-line;">${escapeHtml(order.items)}</p>
       <p style="margin-top:8px; font-weight:600;">RM${Number(order.subtotal).toFixed(2)}</p>
     </div>`;
   result.hidden = false;

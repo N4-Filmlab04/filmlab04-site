@@ -392,7 +392,7 @@ function salesOrderRow(o) {
       <td>${escapeHtml(formatDateTime(o.submittedAt))}</td>
       <td>${escapeHtml(o.name)}</td>
       <td>${escapeHtml(o.phone)}</td>
-      <td>${escapeHtml(o.items)}</td>
+      <td style="white-space:pre-line;">${escapeHtml(o.items)}</td>
       <td>RM${Number(o.subtotal).toFixed(2)}</td>
       <td>${isDelivery ? `Ship: ${escapeHtml(o.address || '—')}` : 'Self-pickup'}</td>
       <td><span class="badge ${paid ? 'badge-in-stock' : 'badge-pending'}">${escapeHtml(o.paymentStatus || 'Pending')}</span></td>

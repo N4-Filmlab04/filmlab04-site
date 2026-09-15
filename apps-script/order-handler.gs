@@ -99,27 +99,27 @@ function fetchCatalogById_() {
 function priceOrder_(items) {
   const catalog = fetchCatalogById_();
   if (!catalog) {
-    const parts = (items || []).map(line => {
+    const parts = (items || []).map((line, i) => {
       const qty = Math.max(0, Math.min(MAX_QTY_PER_LINE, Math.floor(Number(line.qty)) || 0));
-      return `${qty}x [id:${line.id}] (catalog unreachable — price manually)`;
+      return `${i + 1}. [id:${line.id}] (catalog unreachable — price manually) x${qty}`;
     });
-    return { subtotal: 0, itemsText: parts.join('; '), flagged: true };
+    return { subtotal: 0, itemsText: parts.join('\n'), flagged: true };
   }
   let subtotal = 0;
   let flagged = false;
-  const parts = (items || []).map(line => {
+  const parts = (items || []).map((line, i) => {
     const qty = Math.max(0, Math.min(MAX_QTY_PER_LINE, Math.floor(Number(line.qty)) || 0));
     const p = catalog[line.id];
     if (!p) {
       flagged = true;
-      return `${qty}x [UNKNOWN PRODUCT ID: ${line.id}]`;
+      return `${i + 1}. [UNKNOWN PRODUCT ID: ${line.id}] x${qty}`;
     }
     const lineTotal = p.price * qty;
     subtotal += lineTotal;
     const name = `${p.brand} ${p.name}`;
-    return `${qty}x ${name}${line.variant ? ' (' + line.variant + ')' : ''} @ RM${p.price.toFixed(2)}`;
+    return `${i + 1}. ${name}${line.variant ? ' (' + line.variant + ')' : ''} @ RM${p.price.toFixed(2)} x${qty}`;
   });
-  return { subtotal: subtotal, itemsText: parts.join('; '), flagged: flagged };
+  return { subtotal: subtotal, itemsText: parts.join('\n'), flagged: flagged };
 }
 
 // Shared by doGet and doPost — data is {orderId, submittedAt, name, phone,
@@ -161,7 +161,7 @@ function recordOrder_(data) {
     const notes = (data.notes || '') + (priced.flagged ? ' [NEEDS REVIEW: contains an unrecognised product]' : '');
     const isDelivery = data.deliveryMethod === 'Delivery';
     const subtotal = priced.subtotal + (isDelivery ? DELIVERY_FEE : 0);
-    const itemsText = priced.itemsText + (isDelivery ? `; Delivery fee RM${DELIVERY_FEE.toFixed(2)}` : '');
+    const itemsText = priced.itemsText + (isDelivery ? `\nDelivery fee: RM${DELIVERY_FEE.toFixed(2)}` : '');
 
     sheet.appendRow([
       orderId,
