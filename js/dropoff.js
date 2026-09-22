@@ -6,7 +6,7 @@
  * Sheet — see that file's header for why GET instead of POST.
  */
 
-const DROPOFF_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzo9trOi84dJ3J6PxSZqL98GcAiAR2jOO7d0cgNfst9jpimndl4Adw8peDOfiEktYXM2w/exec';
+const DROPOFF_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwFdyNWnPvZXSx_YATiTZiBRAhcLN8ovRxdSe7MHCSssXan4kPigYBICWbsUOQLyXfiGg/exec';
 
 // Same bank details as checkout (js/checkout.js) — Jun Min confirms
 // payment manually, no gateway.
