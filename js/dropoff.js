@@ -191,6 +191,11 @@ function initDropoff() {
       showDropoffError('Please fill in your name, phone number, and email.');
       return;
     }
+    // Loose on purpose — just needs an "@", not full RFC validation.
+    if (!payload.email.includes('@')) {
+      showDropoffError('Please enter a valid email address.');
+      return;
+    }
     if (payload.method === 'Mail / Courier' && !payload.courierProvider) {
       showDropoffError('Please choose or enter your courier provider.');
       return;
