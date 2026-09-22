@@ -1,8 +1,9 @@
 /** Drives the drop-off form on dropoff.html: segmented toggles, live receipt
  * preview, and submission. Depends on cart.js for showToast().
  *
- * Submissions POST to a Google Apps Script Web App (apps-script/dropoff-handler.gs)
- * bound to the "Filmlab04 Drop-offs" Google Sheet, which appends each one as a row.
+ * Submissions go via GET to a Google Apps Script Web App
+ * (apps-script/dropoff-handler.gs) bound to the "Filmlab04 Drop-offs" Google
+ * Sheet — see that file's header for why GET instead of POST.
  */
 
 const DROPOFF_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzo9trOi84dJ3J6PxSZqL98GcAiAR2jOO7d0cgNfst9jpimndl4Adw8peDOfiEktYXM2w/exec';
@@ -139,15 +140,36 @@ async function submitDropoff(payload) {
     // POST once the Google Sheet + Apps Script Web App is set up.
     return { ok: true, demo: true, subtotal: estimateDropoffTotal(payload.service, payload.rolls, payload.highResScan) };
   }
-  // text/plain avoids a CORS preflight (Apps Script web apps don't handle
-  // OPTIONS by default) — Apps Script still reads e.postData.contents fine.
-  const res = await fetch(DROPOFF_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload)
+  // Submitted over GET, not POST — same reason as checkout.js/order-handler.gs:
+  // POST requests to this Apps Script deployment have been unreliable (a
+  // Google-side platform issue), GET has consistently worked.
+  // cache: 'no-store' avoids the browser serving a cached response for
+  // what's actually a write, not a read.
+  const params = new URLSearchParams({
+    action: 'submit-dropoff',
+    submittedAt: payload.submittedAt,
+    name: payload.name,
+    phone: payload.phone,
+    email: payload.email,
+    method: payload.method,
+    courierProvider: payload.courierProvider,
+    trackingNumber: payload.trackingNumber,
+    rolls: payload.rolls,
+    service: payload.service,
+    highResScan: payload.highResScan ? 'true' : 'false',
+    payment: payload.payment,
+    keepStrips: payload.keepStrips,
+    stripsReturn: payload.stripsReturn,
+    reference: payload.reference,
+    notes: payload.notes
   });
+  const res = await fetch(`${DROPOFF_ENDPOINT}?${params.toString()}`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Could not submit — please try again or contact us directly.');
-  return res.json();
+  const result = await res.json();
+  // recordDropoff_ responds with HTTP 200 even when it caught an internal
+  // error — check its own ok field too, not just the HTTP status.
+  if (result.ok === false) throw new Error(result.error || 'Could not submit — please try again or contact us directly.');
+  return result;
 }
 
 function initDropoff() {
