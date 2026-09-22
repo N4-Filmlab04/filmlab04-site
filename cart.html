@@ -44,9 +44,23 @@
     <label class="form-field">Full Name
       <input type="text" id="co-name" placeholder="Your full name" autocomplete="name" required>
     </label>
-    <label class="form-field">Phone Number
-      <input type="tel" id="co-phone" placeholder="+60123456789" autocomplete="tel" inputmode="tel" required>
-    </label>
+    <div class="form-field">Phone Number
+      <div class="form-phone-field">
+        <div class="phone-picker" id="phone-picker">
+          <button type="button" class="phone-picker-trigger" id="phone-picker-trigger" aria-haspopup="listbox" aria-expanded="false">
+            <span class="phone-picker-flag">🇲🇾</span>
+            <span class="phone-picker-code">+60</span>
+            <svg class="phone-picker-caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <input type="hidden" id="co-phone-country" value="60">
+          <div class="phone-picker-panel" id="phone-picker-panel" role="listbox" hidden>
+            <input type="text" class="phone-picker-search" id="phone-picker-search" placeholder="Search" autocomplete="off">
+            <div class="phone-picker-list" id="phone-picker-list"></div>
+          </div>
+        </div>
+        <input type="tel" id="co-phone" placeholder="123456789" autocomplete="tel-national" inputmode="numeric" required>
+      </div>
+    </div>
     <label class="form-field">Email Address
       <input type="email" id="co-email" placeholder="example@gmail.com" autocomplete="email" required>
     </label>
@@ -127,6 +141,8 @@
 </footer>
 
 <script src="js/cart.js?v=2"></script>
+<script src="js/country-codes.js?v=2"></script>
+<script src="js/phone-picker.js?v=2"></script>
 <script src="js/checkout.js?v=2"></script>
 <script>
   async function renderPageCart() {

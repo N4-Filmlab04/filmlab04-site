@@ -161,6 +161,10 @@ function initCheckout() {
     document.getElementById('step-details').style.display = 'block';
   });
 
+  // Flag + dial-code + national-number widget shared with services.html's
+  // drop-off form — see js/phone-picker.js.
+  initPhonePicker('co-phone-country');
+
   // Delivery vs self-pickup — same segmented-control pattern used on
   // services.html's drop-off form.
   const deliveryGroup = document.querySelector('.segmented[data-field="delivery"]');
@@ -179,7 +183,7 @@ function initCheckout() {
     showCheckoutError('');
     hideOrderFailedNotice();
     const name = document.getElementById('co-name').value.trim();
-    const phone = document.getElementById('co-phone').value.trim();
+    const phone = phonePickerFullNumber('co-phone');
     const email = document.getElementById('co-email').value.trim();
     const notes = document.getElementById('co-notes').value.trim();
     const deliveryMethod = deliveryGroup?.querySelector('.segmented-btn.active')?.dataset.value || 'Self-pickup';
@@ -187,6 +191,11 @@ function initCheckout() {
 
     if (!name || !phone || !email) {
       showCheckoutError('Please fill in your name, phone number, and email.');
+      return;
+    }
+    // Loose on purpose — just needs an "@", not full RFC validation.
+    if (!email.includes('@')) {
+      showCheckoutError('Please enter a valid email address.');
       return;
     }
     if (deliveryMethod === 'Delivery' && !address) {

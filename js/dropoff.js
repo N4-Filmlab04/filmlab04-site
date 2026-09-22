@@ -13,92 +13,11 @@ function formatDropoffDate(d) {
   return `${d.getDate()}-${months[d.getMonth()]}-${d.getFullYear()}`;
 }
 
-let __phoneCountry = null;
+// Phone country picker (flag/dial-code/search widget) lives in
+// js/phone-picker.js, shared with cart.html's checkout form.
 
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-
-function selectedDialCode() {
-  return __phoneCountry ? `+${__phoneCountry.code}` : '';
-}
-
-function renderPhoneTrigger() {
-  if (!__phoneCountry) return;
-  document.querySelector('#phone-picker-trigger .phone-picker-flag').textContent = __phoneCountry.flag;
-  document.querySelector('#phone-picker-trigger .phone-picker-code').textContent = `+${__phoneCountry.code}`;
-  document.getElementById('d-phone-country').value = __phoneCountry.code;
-}
-
-function renderPhoneList(query) {
-  const list = document.getElementById('phone-picker-list');
-  const q = (query || '').trim().toLowerCase();
-  const matches = COUNTRY_CODES.filter(c =>
-    !q || c.name.toLowerCase().includes(q) || String(c.code).includes(q)
-  );
-  list.innerHTML = matches.length
-    ? matches.map(c => `
-      <button type="button" class="phone-picker-item${__phoneCountry && c.region === __phoneCountry.region ? ' active' : ''}" data-region="${c.region}">
-        <span>${c.flag}</span>
-        <span class="phone-picker-item-name">${escapeHtml(c.name)}</span>
-        <span class="phone-picker-item-code">+${c.code}</span>
-      </button>`).join('')
-    : '<p class="phone-picker-empty">No matches</p>';
-}
-
-function openPhonePanel() {
-  const panel = document.getElementById('phone-picker-panel');
-  panel.hidden = false;
-  document.getElementById('phone-picker-trigger').setAttribute('aria-expanded', 'true');
-  const search = document.getElementById('phone-picker-search');
-  search.value = '';
-  renderPhoneList('');
-  search.focus();
-}
-
-function closePhonePanel() {
-  document.getElementById('phone-picker-panel').hidden = true;
-  document.getElementById('phone-picker-trigger').setAttribute('aria-expanded', 'false');
-}
-
-function initPhonePicker() {
-  if (typeof COUNTRY_CODES === 'undefined') return;
-  __phoneCountry = COUNTRY_CODES[0]; // Malaysia
-  renderPhoneTrigger();
-
-  const trigger = document.getElementById('phone-picker-trigger');
-  const panel = document.getElementById('phone-picker-panel');
-  const search = document.getElementById('phone-picker-search');
-  const list = document.getElementById('phone-picker-list');
-
-  trigger.addEventListener('click', (e) => {
-    e.stopPropagation();
-    panel.hidden ? openPhonePanel() : closePhonePanel();
-  });
-
-  search.addEventListener('input', () => renderPhoneList(search.value));
-  search.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      list.querySelector('.phone-picker-item')?.click();
-    }
-  });
-
-  list.addEventListener('click', (e) => {
-    const item = e.target.closest('.phone-picker-item');
-    if (!item) return;
-    __phoneCountry = COUNTRY_CODES.find(c => c.region === item.dataset.region) || __phoneCountry;
-    renderPhoneTrigger();
-    closePhonePanel();
-    updatePreview();
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!document.getElementById('phone-picker').contains(e.target)) closePhonePanel();
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closePhonePanel();
-  });
 }
 
 function setSegmented(group, value) {
@@ -153,7 +72,7 @@ function courierProviderValue() {
 function updatePreview() {
   document.getElementById('p-date').textContent = formatDropoffDate(new Date());
   document.getElementById('p-name').textContent = document.getElementById('d-name').value.trim() || '…';
-  document.getElementById('p-phone').textContent = (selectedDialCode() + ' ' + document.getElementById('d-phone').value.trim()).trim();
+  document.getElementById('p-phone').textContent = (phonePickerDialCode() + ' ' + document.getElementById('d-phone').value.trim()).trim();
   document.getElementById('p-email').textContent = document.getElementById('d-email').value.trim() || '…';
 
   const methodGroup = document.querySelector('.segmented[data-field="method"]');
@@ -211,7 +130,7 @@ function initDropoff() {
   const form = document.getElementById('dropoff-form');
   if (!form) return;
 
-  initPhonePicker();
+  initPhonePicker('d-phone-country', updatePreview);
 
   document.querySelectorAll('.segmented').forEach(group => {
     group.querySelectorAll('.segmented-btn').forEach(btn => {
@@ -252,7 +171,7 @@ function initDropoff() {
 
     const payload = {
       name: document.getElementById('d-name').value.trim(),
-      phone: selectedDialCode() + document.getElementById('d-phone').value.trim(),
+      phone: phonePickerFullNumber('d-phone'),
       email: document.getElementById('d-email').value.trim(),
       method: getSegmentedValue(methodGroup),
       rolls: Number(document.getElementById('d-rolls').value),
