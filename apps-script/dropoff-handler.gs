@@ -15,6 +15,23 @@
  *    in js/dropoff.js.
  */
 
+// Must match SERVICE_PRICES / HIGHRES_FEE in js/dropoff.js — this copy is
+// authoritative (never trust a client-sent amount), the client's copy is
+// only for the live preview before submission.
+const SERVICE_PRICES = {
+  'Develop and scan': 18,
+  'Developing only': 13,
+  'Cut film scanning only': 13
+};
+const HIGHRES_FEE = 10;
+
+function priceDropoff_(data) {
+  const rolls = Math.max(0, Math.floor(Number(data.rolls)) || 0);
+  const base = SERVICE_PRICES[data.service] || 0;
+  const highres = data.highResScan ? HIGHRES_FEE * rolls : 0;
+  return base * rolls + highres;
+}
+
 function doPost(e) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   const data = JSON.parse(e.postData.contents);
@@ -22,10 +39,12 @@ function doPost(e) {
   if (sheet.getLastRow() === 0) {
     sheet.appendRow([
       'Submitted At', 'Name', 'Phone', 'Email', 'Method', 'Courier Provider',
-      'Tracking Number', 'Rolls', 'Service', 'High-Res Scan', 'Payment',
-      'Keep Strips', 'Strips Return', 'Reference', 'Notes'
+      'Tracking Number', 'Rolls', 'Service', 'High-Res Scan', 'Subtotal (RM)',
+      'Payment', 'Keep Strips', 'Strips Return', 'Reference', 'Notes'
     ]);
   }
+
+  const subtotal = priceDropoff_(data);
 
   sheet.appendRow([
     data.submittedAt || new Date().toISOString(),
@@ -38,6 +57,7 @@ function doPost(e) {
     data.rolls || '',
     data.service || '',
     data.highResScan ? 'Yes' : 'No',
+    subtotal,
     data.payment || '',
     data.keepStrips || '',
     data.stripsReturn || '',
@@ -45,6 +65,6 @@ function doPost(e) {
     data.notes || ''
   ]);
 
-  return ContentService.createTextOutput(JSON.stringify({ ok: true }))
+  return ContentService.createTextOutput(JSON.stringify({ ok: true, subtotal: subtotal }))
     .setMimeType(ContentService.MimeType.JSON);
 }

@@ -239,6 +239,31 @@
     <p class="form-error" id="d-error" hidden></p>
     <button type="submit" class="btn btn-primary btn-block" style="margin-top:16px;">Submit drop-off</button>
   </form>
+
+  <section id="dropoff-payment-step" style="padding: 24px 0;" hidden>
+    <div class="receipt-label" style="text-align:center;">Drop-off confirmed 🎉</div>
+    <div class="receipt" style="max-width:400px; margin:0 auto;">
+      <div class="receipt-head">Amount due</div>
+      <div class="receipt-body">
+        <div style="text-align:center; padding: var(--space-2) 0 var(--space-4);">
+          <div style="font-family:'Poppins',sans-serif; font-weight:600; font-size:2.25rem; color:var(--ink);">RM<span id="dp-amount"></span></div>
+        </div>
+        <div class="receipt-box">
+          <div class="receipt-row"><span>Bank</span><strong id="dp-bank">—</strong></div>
+          <div class="receipt-row"><span>Account No.</span><strong id="dp-account">—</strong></div>
+          <div class="receipt-row"><span>Account Name</span><strong id="dp-holder">—</strong></div>
+        </div>
+        <div class="receipt-section-label">What happens next</div>
+        <ul style="margin:0; padding-left:var(--space-5); color:var(--ink-soft); font-size:0.875rem; line-height:1.7;">
+          <li>Complete payment using the bank details above</li>
+          <li>Send us your payment receipt on WhatsApp</li>
+          <li>Drop your film at our store — we'll take it from there</li>
+        </ul>
+        <a href="#" id="dp-whatsapp-link" target="_blank" rel="noopener" class="btn btn-primary btn-block" style="margin-top:var(--space-4);">Send receipt on WhatsApp</a>
+      </div>
+    </div>
+    <p class="muted" style="text-align:center; font-size:0.8125rem; margin-top:var(--space-4);">Your details are kept private and never shared with third parties.</p>
+  </section>
 </section>
 
 <section class="container section" style="padding-top:0;">

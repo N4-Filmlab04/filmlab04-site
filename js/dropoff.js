@@ -7,6 +7,30 @@
 
 const DROPOFF_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzo9trOi84dJ3J6PxSZqL98GcAiAR2jOO7d0cgNfst9jpimndl4Adw8peDOfiEktYXM2w/exec';
 
+// Same bank details as checkout (js/checkout.js) — Jun Min confirms
+// payment manually, no gateway.
+const PAYMENT_INFO = {
+  bankName: 'Maybank',
+  accountNumber: '5572 2321 8483',
+  accountHolder: 'N4 Camera Store (Retail) Sdn. Bhd.'
+};
+const WHATSAPP_NUMBER = '6044389878';
+
+// Must match SERVICE_PRICES / HIGHRES_FEE in apps-script/dropoff-handler.gs
+// — that copy is authoritative, this one is only for the live preview
+// before submission and the no-backend demo path.
+const SERVICE_PRICES = {
+  'Develop and scan': 18,
+  'Developing only': 13,
+  'Cut film scanning only': 13
+};
+const HIGHRES_FEE = 10;
+
+function estimateDropoffTotal(service, rolls, highResScan) {
+  const n = Math.max(0, Math.floor(Number(rolls)) || 0);
+  return (SERVICE_PRICES[service] || 0) * n + (highResScan ? HIGHRES_FEE * n : 0);
+}
+
 function formatDropoffDate(d) {
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
     'August', 'September', 'October', 'November', 'December'];
@@ -113,7 +137,7 @@ async function submitDropoff(payload) {
   if (!DROPOFF_ENDPOINT) {
     // No backend configured yet — this is where the real submission will
     // POST once the Google Sheet + Apps Script Web App is set up.
-    return { ok: true, demo: true };
+    return { ok: true, demo: true, subtotal: estimateDropoffTotal(payload.service, payload.rolls, payload.highResScan) };
   }
   // text/plain avoids a CORS preflight (Apps Script web apps don't handle
   // OPTIONS by default) — Apps Script still reads e.postData.contents fine.
@@ -225,16 +249,37 @@ function initDropoff() {
     submitBtn.disabled = true;
     try {
       const result = await submitDropoff(payload);
+      const payNow = payload.payment === 'Pay now';
+
       form.reset();
       setSegmented(methodGroup, 'Walk-in');
       setSegmented(paymentGroup, '');
       setSegmented(stripsGroup, '');
       updateStripsReturnVisibility();
       updateCourierFieldVisibility();
-      __phoneCountry = COUNTRY_CODES[0];
-      renderPhoneTrigger();
+      __phonePickerCountry = COUNTRY_CODES[0];
+      renderPhonePickerTrigger();
       updatePreview();
-      showToast(result.demo ? 'Submitted (demo — not saved yet)' : 'Drop-off submitted!');
+
+      if (payNow) {
+        // Take the customer straight to payment instead of just a toast —
+        // same "amount due + bank details + WhatsApp receipt" pattern as
+        // cart.html's checkout payment step.
+        const subtotal = typeof result.subtotal === 'number'
+          ? result.subtotal
+          : estimateDropoffTotal(payload.service, payload.rolls, payload.highResScan);
+        document.getElementById('dp-amount').textContent = subtotal.toFixed(2);
+        document.getElementById('dp-bank').textContent = PAYMENT_INFO.bankName || '—';
+        document.getElementById('dp-account').textContent = PAYMENT_INFO.accountNumber || '—';
+        document.getElementById('dp-holder').textContent = PAYMENT_INFO.accountHolder || '—';
+        const text = `Hi, here's my payment receipt for my film drop-off (${payload.rolls}x roll, ${payload.service}) — RM${subtotal.toFixed(2)}.`;
+        document.getElementById('dp-whatsapp-link').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+        form.hidden = true;
+        document.getElementById('dropoff-payment-step').hidden = false;
+        window.scrollTo({ top: document.getElementById('dropoff-payment-step').offsetTop - 24, behavior: 'smooth' });
+      } else {
+        showToast(result.demo ? 'Submitted (demo — not saved yet)' : 'Drop-off submitted!');
+      }
     } catch (err) {
       showDropoffError(err.message);
     } finally {
