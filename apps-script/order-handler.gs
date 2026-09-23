@@ -125,6 +125,16 @@ function fetchCatalogById_() {
 // trusting an arbitrary client-supplied amount. If the catalog itself is
 // unreachable after retrying, the order is still recorded (never silently
 // dropped) with subtotal 0 and every line flagged for manual pricing.
+//
+// Also caps each line's quantity at the catalog's current stock — the
+// cart UI already does this (js/cart.js), but that only stops an honest
+// browser click; this is the real enforcement, since nothing stops a
+// crafted request straight to this endpoint from asking for more than
+// exists. Any line trimmed this way is only charged and recorded for the
+// quantity actually available, flagged so Jun Min notices and can follow
+// up with the customer about the shortfall. Returns soldItems — the
+// clamped {id, qty} pairs actually sold — for decrementStock_ to use
+// instead of the client's original (possibly inflated) quantities.
 function priceOrder_(items) {
   const catalog = fetchCatalogById_();
   if (!catalog) {
@@ -132,23 +142,31 @@ function priceOrder_(items) {
       const qty = Math.max(0, Math.min(MAX_QTY_PER_LINE, Math.floor(Number(line.qty)) || 0));
       return `${i + 1}. [id:${line.id}] (catalog unreachable — price manually) x${qty}`;
     });
-    return { subtotal: 0, itemsText: parts.join('\n'), flagged: true };
+    return { subtotal: 0, itemsText: parts.join('\n'), flagged: true, soldItems: [] };
   }
   let subtotal = 0;
   let flagged = false;
+  const soldItems = [];
   const parts = (items || []).map((line, i) => {
-    const qty = Math.max(0, Math.min(MAX_QTY_PER_LINE, Math.floor(Number(line.qty)) || 0));
+    const requestedQty = Math.max(0, Math.min(MAX_QTY_PER_LINE, Math.floor(Number(line.qty)) || 0));
     const p = catalog[line.id];
     if (!p) {
       flagged = true;
-      return `${i + 1}. [UNKNOWN PRODUCT ID: ${line.id}] x${qty}`;
+      return `${i + 1}. [UNKNOWN PRODUCT ID: ${line.id}] x${requestedQty}`;
     }
+    const available = Math.max(0, Number(p.quantity) || 0);
+    const qty = Math.min(requestedQty, available);
+    if (qty < requestedQty) flagged = true;
+    if (qty > 0) soldItems.push({ id: line.id, qty: qty });
     const lineTotal = p.price * qty;
     subtotal += lineTotal;
     const name = `${p.brand} ${p.name}`;
-    return `${i + 1}. ${name}${line.variant ? ' (' + line.variant + ')' : ''} @ RM${p.price.toFixed(2)} x${qty}`;
+    const stockNote = qty === requestedQty ? ''
+      : qty === 0 ? ` [OUT OF STOCK — requested ${requestedQty}]`
+      : ` [only ${qty} in stock — requested ${requestedQty}]`;
+    return `${i + 1}. ${name}${line.variant ? ' (' + line.variant + ')' : ''} @ RM${p.price.toFixed(2)} x${qty}${stockNote}`;
   });
-  return { subtotal: subtotal, itemsText: parts.join('\n'), flagged: flagged };
+  return { subtotal: subtotal, itemsText: parts.join('\n'), flagged: flagged, soldItems: soldItems };
 }
 
 // Shared by doGet and doPost — data is {orderId, submittedAt, name, phone,
@@ -187,7 +205,7 @@ function recordOrder_(data) {
     // the sheet matches the wall clock, instead of UTC (8 hours behind).
     const submittedAt = Utilities.formatDate(new Date(), 'Asia/Kuala_Lumpur', "yyyy-MM-dd'T'HH:mm:ss");
     const priced = priceOrder_(data.items);
-    const notes = (data.notes || '') + (priced.flagged ? ' [NEEDS REVIEW: contains an unrecognised product]' : '');
+    const notes = (data.notes || '') + (priced.flagged ? ' [NEEDS REVIEW: see Items — unrecognised product or insufficient stock]' : '');
     const isDelivery = data.deliveryMethod === 'Delivery';
     const subtotal = priced.subtotal + (isDelivery ? DELIVERY_FEE : 0);
     const itemsText = priced.itemsText + (isDelivery ? `\nDelivery fee: RM${DELIVERY_FEE.toFixed(2)}` : '');
@@ -206,7 +224,7 @@ function recordOrder_(data) {
       data.address || ''
     ]);
 
-    decrementStock_(data.items);
+    decrementStock_(priced.soldItems);
 
     return jsonOut_({ ok: true, orderId: orderId, subtotal: subtotal });
   } catch (err) {
