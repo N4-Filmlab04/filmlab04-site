@@ -164,6 +164,8 @@
       subtotal += lineTotal;
       const idJs = escapeJsString(p.id);
       const variantArg = line.variant ? `, '${escapeJsString(line.variant)}'` : ', null';
+      const maxQty = Number(p.quantity) || 0;
+      const atMax = line.qty >= maxQty;
       return `
         <div class="cart-line">
           <div class="cart-line-thumb">${(() => { const img = lineImage(p, line.variant); return img ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(p.brand)} ${escapeHtml(p.name)}">` : ''; })()}</div>
@@ -173,7 +175,7 @@
             <div class="cart-line-qty">
               <button onclick="setQty('${idJs}', ${line.qty - 1}${variantArg}); renderPageCart();">-</button>
               <span>${line.qty}</span>
-              <button onclick="setQty('${idJs}', ${line.qty + 1}${variantArg}); renderPageCart();">+</button>
+              <button onclick="setQty('${idJs}', ${line.qty + 1}${variantArg}, ${maxQty}); renderPageCart();" ${atMax ? 'disabled title="Only ' + maxQty + ' in stock"' : ''}>+</button>
             </div>
           </div>
           <div class="cart-line-total">${escapeHtml(p.currency)}${lineTotal.toFixed(2)}</div>

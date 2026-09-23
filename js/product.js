@@ -63,7 +63,7 @@ async function renderProduct() {
         <div style="display:flex; align-items:center; gap:16px; margin: 24px 0;">
           <span class="product-price" style="font-size:1.5rem;">${escapeHtml(p.currency)}${p.price.toFixed(2)}</span>
           <button class="btn btn-primary" ${soldOut ? 'disabled' : ''}
-            onclick="addToCart('${idJs}', 1, ${hasVariants ? `'${escapeJsString(__selectedVariant.color)}'` : 'null'}); openCart();">${soldOut ? 'Sold out' : 'Add to cart'}</button>
+            onclick="addToCart('${idJs}', 1, ${hasVariants ? `'${escapeJsString(__selectedVariant.color)}'` : 'null'}, ${Number(p.quantity) || 0}); openCart();">${soldOut ? 'Sold out' : 'Add to cart'}</button>
         </div>
       </div>
     </div>

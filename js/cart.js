@@ -46,16 +46,27 @@ function saveCart(cart) {
   renderCartBadge();
 }
 
-function addToCart(productId, qty = 1, variant = null) {
+// maxQty is the product's real stock (Products sheet's Quantity column) —
+// callers that know it (product.js, shop.js) pass it so the cart can never
+// hold more than what's actually in stock. Defaults to Infinity for any
+// caller that doesn't (there shouldn't be one, but this fails open rather
+// than silently blocking a legitimate add).
+function addToCart(productId, qty = 1, variant = null, maxQty = Infinity) {
   const cart = getCart();
   const line = cart.find(l => l.id === productId && (l.variant || null) === (variant || null));
+  const already = line ? line.qty : 0;
+  const allowed = Math.max(0, Math.min(qty, maxQty - already));
+  if (allowed <= 0) {
+    showToast(`Only ${maxQty} in stock — you already have the max in your cart`);
+    return;
+  }
   if (line) {
-    line.qty += qty;
+    line.qty += allowed;
   } else {
-    cart.push({ id: productId, variant: variant || null, qty });
+    cart.push({ id: productId, variant: variant || null, qty: allowed });
   }
   saveCart(cart);
-  showToast('Added to cart');
+  showToast(allowed < qty ? `Added ${allowed} — that's all that's in stock` : 'Added to cart');
 }
 
 function removeFromCart(productId, variant = null) {
@@ -63,7 +74,7 @@ function removeFromCart(productId, variant = null) {
   renderCartDrawer();
 }
 
-function setQty(productId, qty, variant = null) {
+function setQty(productId, qty, variant = null, maxQty = Infinity) {
   const cart = getCart();
   const line = cart.find(l => l.id === productId && (l.variant || null) === (variant || null));
   if (!line) return;
@@ -71,7 +82,9 @@ function setQty(productId, qty, variant = null) {
     removeFromCart(productId, variant);
     return;
   }
-  line.qty = qty;
+  const capped = Math.min(qty, maxQty);
+  if (capped < qty) showToast(`Only ${maxQty} in stock`);
+  line.qty = capped;
   saveCart(cart);
   renderCartDrawer();
 }
@@ -158,6 +171,8 @@ async function renderCartDrawer() {
     subtotal += lineTotal;
     const idJs = escapeJsString(p.id);
     const variantArg = line.variant ? `, '${escapeJsString(line.variant)}'` : ', null';
+    const maxQty = Number(p.quantity) || 0;
+    const atMax = line.qty >= maxQty;
     return `
       <div class="cart-line">
         <div class="cart-line-thumb">${(() => { const img = lineImage(p, line.variant); return img ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(p.brand)} ${escapeHtml(p.name)}">` : ''; })()}</div>
@@ -167,7 +182,7 @@ async function renderCartDrawer() {
           <div class="cart-line-qty">
             <button onclick="setQty('${idJs}', ${line.qty - 1}${variantArg})">-</button>
             <span>${line.qty}</span>
-            <button onclick="setQty('${idJs}', ${line.qty + 1}${variantArg})">+</button>
+            <button onclick="setQty('${idJs}', ${line.qty + 1}${variantArg}, ${maxQty})" ${atMax ? 'disabled title="Only ' + maxQty + ' in stock"' : ''}>+</button>
           </div>
         </div>
         <div class="cart-line-total">${escapeHtml(p.currency)}${lineTotal.toFixed(2)}</div>

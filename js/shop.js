@@ -16,7 +16,7 @@ function productCard(p) {
   const action = hasVariants
     ? `<a href="product.html?id=${idAttr}" class="btn btn-primary btn-sm">Choose colour</a>`
     : `<button class="btn btn-primary btn-sm" ${soldOut ? 'disabled' : ''}
-        onclick="addToCart('${idJs}')">${soldOut ? 'Sold out' : 'Add to cart'}</button>`;
+        onclick="addToCart('${idJs}', 1, null, ${Number(p.quantity) || 0})">${soldOut ? 'Sold out' : 'Add to cart'}</button>`;
   return `
     <article class="product-card">
       <a href="product.html?id=${idAttr}" class="product-card-img">
