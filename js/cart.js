@@ -33,6 +33,20 @@ function lineImage(p, variant) {
   return p.image;
 }
 
+// Each colour has its own stock now — p.quantity is only their sum, so
+// capping against that would let "Vanilla White" be added using stock
+// that actually belongs to "Midnight Black". Falls back to p.quantity
+// (the pooled total) for a product with no variants, or for a variant
+// that predates per-colour quantities (v.quantity still undefined) —
+// admin.html now writes a real number for every colour going forward.
+function lineMaxQty(p, variant) {
+  if (variant && p.variants) {
+    const v = p.variants.find(v => v.color === variant);
+    if (v) return typeof v.quantity === 'number' ? v.quantity : (Number(p.quantity) || 0);
+  }
+  return Number(p.quantity) || 0;
+}
+
 function getCart() {
   try {
     return JSON.parse(localStorage.getItem(CART_KEY)) || [];
@@ -171,7 +185,7 @@ async function renderCartDrawer() {
     subtotal += lineTotal;
     const idJs = escapeJsString(p.id);
     const variantArg = line.variant ? `, '${escapeJsString(line.variant)}'` : ', null';
-    const maxQty = Number(p.quantity) || 0;
+    const maxQty = lineMaxQty(p, line.variant);
     const atMax = line.qty >= maxQty;
     return `
       <div class="cart-line">

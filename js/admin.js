@@ -112,6 +112,11 @@ function uploadBtn() {
 
 function variantRow(v) {
   v = v || {};
+  // Falls back to reading the old binary stock flag (pre-migration data)
+  // so existing "in-stock" colours don't silently become 0 the first
+  // time this editor opens — Jun Min still needs to fill in the real
+  // per-colour count once, this just avoids zeroing everything out.
+  const qty = v.quantity ?? (v.stock === 'sold-out' ? 0 : 1);
   return `
     <div class="admin-variant-row">
       <input type="text" class="v-color" placeholder="Powder Blue" value="${escapeHtml(v.color)}">
@@ -119,28 +124,41 @@ function variantRow(v) {
         <input type="text" class="v-image" placeholder="images/products/..." value="${escapeHtml(v.image)}">
         ${uploadBtn()}
       </div>
-      <select class="v-stock">
-        <option value="in-stock" ${v.stock !== 'sold-out' ? 'selected' : ''}>in-stock</option>
-        <option value="sold-out" ${v.stock === 'sold-out' ? 'selected' : ''}>sold-out</option>
-      </select>
+      <input type="number" class="v-quantity" min="0" step="1" placeholder="0" value="${qty}">
       <button type="button" class="btn btn-secondary btn-sm admin-variant-remove">Remove</button>
     </div>`;
 }
 
 function renderVariantRows(variants) {
   document.getElementById('f-variants-rows').innerHTML = (variants || []).map(variantRow).join('');
+  syncVariantsTotalQuantity();
 }
 
+// Stock is per-colour now (each colour has its own Quantity, auto sold-out
+// at 0 — same derivation as the top-level field) instead of a manually
+// toggled in-stock/sold-out flag, so Jun Min doesn't have to guess which
+// colour a sale came out of.
 function readVariants() {
   const rows = document.querySelectorAll('#f-variants-rows .admin-variant-row');
   const variants = [];
   rows.forEach(row => {
     const color = row.querySelector('.v-color').value.trim();
     const image = row.querySelector('.v-image').value.trim();
-    const stock = row.querySelector('.v-stock').value;
-    if (color) variants.push({ color, image, stock });
+    const quantity = Math.max(0, Math.floor(Number(row.querySelector('.v-quantity').value)) || 0);
+    if (color) variants.push({ color, image, quantity, stock: quantity > 0 ? 'in-stock' : 'sold-out' });
   });
   return variants;
+}
+
+// The top-level Quantity field becomes read-only (see setVariantsMode) and
+// auto-follows the sum of colour quantities whenever this section is
+// visible — the two numbers drifting apart independently is exactly what
+// left Jun Min not knowing which colour a sale actually came from.
+function syncVariantsTotalQuantity() {
+  const section = document.getElementById('f-variants-section');
+  if (section.hidden) return;
+  const total = readVariants().reduce((sum, v) => sum + v.quantity, 0);
+  document.getElementById('f-quantity').value = total;
 }
 
 function sampleRow(path) {
@@ -254,12 +272,16 @@ function readForm() {
   Object.keys(product).forEach(key => {
     if (product[key] === undefined) delete product[key];
   });
+
+  const variants = readVariants();
+  if (variants.length) {
+    product.variants = variants;
+    // Authoritative when variants exist — see syncVariantsTotalQuantity().
+    product.quantity = variants.reduce((sum, v) => sum + v.quantity, 0);
+  }
   if (typeof product.quantity === 'number') {
     product.stock = product.quantity > 0 ? 'in-stock' : 'sold-out';
   }
-
-  const variants = readVariants();
-  if (variants.length) product.variants = variants;
 
   const about = str('f-about');
   if (about) product.about = about;
@@ -274,10 +296,18 @@ function readForm() {
 }
 
 function setVariantsMode(mode, product) {
-  document.getElementById('f-variants-section').hidden = mode !== 'multi';
-  if (mode === 'multi' && !(product && product.variants && product.variants.length)) {
+  const isMulti = mode === 'multi';
+  document.getElementById('f-variants-section').hidden = !isMulti;
+  if (isMulti && !(product && product.variants && product.variants.length)) {
     renderVariantRows([{}, {}]);
   }
+  // Read-only, not just a convention — see syncVariantsTotalQuantity().
+  // Hand-editing this while colours are shown is exactly how the two
+  // numbers used to drift apart.
+  const qtyField = document.getElementById('f-quantity');
+  qtyField.readOnly = isMulti;
+  qtyField.title = isMulti ? 'Auto-calculated from the colours below' : '';
+  if (isMulti) syncVariantsTotalQuantity();
 }
 
 function openEditor(product, mode) {
@@ -619,11 +649,16 @@ function initAdmin() {
     document.getElementById('admin-save').addEventListener('click', saveEditor);
     document.getElementById('admin-variant-add').addEventListener('click', () => {
       document.getElementById('f-variants-rows').insertAdjacentHTML('beforeend', variantRow());
+      syncVariantsTotalQuantity();
     });
     document.getElementById('f-variants-rows').addEventListener('click', (e) => {
       if (e.target.classList.contains('admin-variant-remove')) {
         e.target.closest('.admin-variant-row').remove();
+        syncVariantsTotalQuantity();
       }
+    });
+    document.getElementById('f-variants-rows').addEventListener('input', (e) => {
+      if (e.target.classList.contains('v-quantity')) syncVariantsTotalQuantity();
     });
     document.getElementById('admin-sample-add').addEventListener('click', () => {
       document.getElementById('f-sampleimages-rows').insertAdjacentHTML('beforeend', sampleRow());

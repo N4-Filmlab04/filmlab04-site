@@ -36,7 +36,10 @@
  *                                by order-handler.gs right after an order
  *                                is recorded, once per line item, to
  *                                reduce that product's Quantity so it can
- *                                go "Sold out" automatically.
+ *                                go "Sold out" automatically. An optional
+ *                                &variant=<colour name> reduces just that
+ *                                colour's own Quantity for a multi-colour
+ *                                product instead of the pooled total.
  * doPost {action:'save-all'}  — requires idToken. Replaces the whole catalog.
  * doPost {action:'upload-image'} — requires idToken. Saves a base64 image to
  *                                Drive and returns a public URL for it.
@@ -129,16 +132,43 @@ function readAllProducts_() {
 // (quantity hits 0 -> shop.html/product.html show "Sold out" on their
 // next load, same derivation readAllProducts_ already does). Clamped at
 // 0 — never goes negative even if two orders race for the last unit.
-function decrementStock_(id, qty) {
+//
+// variant (a colour name, or '') tells us which one sold for a
+// multi-colour product — each colour tracks its own Quantity (in the
+// Data JSON's variants array) rather than sharing one pooled number, so
+// selling out "Vanilla White" doesn't quietly also mark "Midnight Black"
+// as sold out. The top-level Quantity column (used for the overall
+// in-stock/sold-out badge and the shop's stock cap) is kept as the sum
+// of all colours, recomputed here — never edited independently.
+function decrementStock_(id, qty, variant) {
   const sheet = getSheet_();
   const values = sheet.getDataRange().getValues();
   for (let i = 1; i < values.length; i++) {
-    if (String(values[i][0]) === String(id)) {
-      const current = Number(values[i][6]) || 0;
-      const next = Math.max(0, current - qty);
-      sheet.getRange(i + 1, 7).setValue(next); // column G — Quantity
-      return { ok: true, id: id, quantity: next };
+    if (String(values[i][0]) !== String(id)) continue;
+
+    let data = {};
+    try { data = JSON.parse(values[i][7] || '{}'); } catch (err) { data = {}; }
+
+    // Only touch the per-colour number if this colour actually has one —
+    // one that predates per-colour quantities (still just the old binary
+    // stock flag) falls through to the pooled-total path below instead
+    // of being wrongly zeroed out from nothing.
+    if (variant && Array.isArray(data.variants) && data.variants.length) {
+      const v = data.variants.find(v => v.color === variant);
+      if (v && typeof v.quantity === 'number') {
+        v.quantity = Math.max(0, v.quantity - qty);
+        v.stock = v.quantity > 0 ? 'in-stock' : 'sold-out';
+        sheet.getRange(i + 1, 8).setValue(JSON.stringify(data)); // column H — Data
+        const total = data.variants.reduce((sum, v2) => sum + (Number(v2.quantity) || 0), 0);
+        sheet.getRange(i + 1, 7).setValue(total); // column G — Quantity
+        return { ok: true, id: id, variant: variant, quantity: v.quantity, totalQuantity: total };
+      }
     }
+
+    const current = Number(values[i][6]) || 0;
+    const next = Math.max(0, current - qty);
+    sheet.getRange(i + 1, 7).setValue(next); // column G — Quantity
+    return { ok: true, id: id, quantity: next };
   }
   return { ok: false, error: 'Product not found' };
 }
@@ -289,7 +319,7 @@ function doGet(e) {
   if (action === 'decrement-stock') {
     if (e.parameter.key !== INTERNAL_KEY) return jsonOut_({ ok: false, error: 'Not authorized' });
     const qty = Math.max(0, Math.floor(Number(e.parameter.qty)) || 0);
-    return jsonOut_(decrementStock_(e.parameter.id || '', qty));
+    return jsonOut_(decrementStock_(e.parameter.id || '', qty, e.parameter.variant || ''));
   }
   return jsonOut_({ error: 'Unknown action' });
 }

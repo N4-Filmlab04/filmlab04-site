@@ -68,6 +68,7 @@ function decrementStock_(items) {
       const url = PRODUCTS_ENDPOINT + '?action=decrement-stock'
         + '&id=' + encodeURIComponent(line.id)
         + '&qty=' + qty
+        + '&variant=' + encodeURIComponent(line.variant || '')
         + '&key=' + encodeURIComponent(INTERNAL_KEY);
       UrlFetchApp.fetch(url, { muteHttpExceptions: true });
     } catch (err) {
@@ -154,10 +155,24 @@ function priceOrder_(items) {
       flagged = true;
       return `${i + 1}. [UNKNOWN PRODUCT ID: ${line.id}] x${requestedQty}`;
     }
-    const available = Math.max(0, Number(p.quantity) || 0);
+    // For a multi-colour product, stock is per-colour — p.quantity is
+    // only the sum across all of them, so checking that alone would let
+    // an order for "Vanilla White" go through using stock that actually
+    // belongs to "Midnight Black". Falls back to p.quantity (the pooled
+    // total) for a product with no variants, an unrecognised colour, or
+    // a variant that predates per-colour quantities.
+    let available = Math.max(0, Number(p.quantity) || 0);
+    if (line.variant && Array.isArray(p.variants)) {
+      const v = p.variants.find(v => v.color === line.variant);
+      if (v) {
+        available = typeof v.quantity === 'number' ? Math.max(0, v.quantity) : available;
+      } else {
+        available = 0;
+      }
+    }
     const qty = Math.min(requestedQty, available);
     if (qty < requestedQty) flagged = true;
-    if (qty > 0) soldItems.push({ id: line.id, qty: qty });
+    if (qty > 0) soldItems.push({ id: line.id, qty: qty, variant: line.variant || '' });
     const lineTotal = p.price * qty;
     subtotal += lineTotal;
     const name = `${p.brand} ${p.name}`;
