@@ -31,6 +31,12 @@
  *                                if true, it skips straight to the
  *                                WhatsApp fallback instead of attempting
  *                                (and waiting to fail) a real submission.
+ * doGet ?action=decrement-stock — requires key=INTERNAL_KEY (a shared
+ *                                secret, not customer/admin auth). Called
+ *                                by order-handler.gs right after an order
+ *                                is recorded, once per line item, to
+ *                                reduce that product's Quantity so it can
+ *                                go "Sold out" automatically.
  * doPost {action:'save-all'}  — requires idToken. Replaces the whole catalog.
  * doPost {action:'upload-image'} — requires idToken. Saves a base64 image to
  *                                Drive and returns a public URL for it.
@@ -59,6 +65,13 @@ const ALLOWED_EMAILS = [
 
 // OAuth Client ID from Google Cloud Console ("Sign In With Google" on admin.html).
 const GOOGLE_CLIENT_ID = 'PASTE_YOUR_OAUTH_CLIENT_ID_HERE';
+
+// Shared secret order-handler.gs sends when it calls ?action=decrement-stock
+// after recording a paid-for order — not full auth (no customer/browser
+// ever calls this action), just enough that a stranger who finds this URL
+// can't quietly zero out the catalog. Must match INTERNAL_KEY in
+// apps-script/order-handler.gs.
+const INTERNAL_KEY = 'flb04-internal-9c72e1a4';
 
 // The spreadsheet ID of the existing "Filmlab04 Orders" sheet (from its URL:
 // docs.google.com/spreadsheets/d/THIS_PART/edit).
@@ -109,6 +122,25 @@ function readAllProducts_() {
     }));
   }
   return products;
+}
+
+// Called by order-handler.gs right after an order is recorded, one call
+// per line item, so a product that sells out is reflected immediately
+// (quantity hits 0 -> shop.html/product.html show "Sold out" on their
+// next load, same derivation readAllProducts_ already does). Clamped at
+// 0 — never goes negative even if two orders race for the last unit.
+function decrementStock_(id, qty) {
+  const sheet = getSheet_();
+  const values = sheet.getDataRange().getValues();
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(id)) {
+      const current = Number(values[i][6]) || 0;
+      const next = Math.max(0, current - qty);
+      sheet.getRange(i + 1, 7).setValue(next); // column G — Quantity
+      return { ok: true, id: id, quantity: next };
+    }
+  }
+  return { ok: false, error: 'Product not found' };
 }
 
 function writeAllProducts_(products) {
@@ -253,6 +285,11 @@ function doGet(e) {
   if (action === 'whoami') {
     const email = verifyLogin_(e.parameter.idToken);
     return jsonOut_({ authorized: !!email, email: email || null });
+  }
+  if (action === 'decrement-stock') {
+    if (e.parameter.key !== INTERNAL_KEY) return jsonOut_({ ok: false, error: 'Not authorized' });
+    const qty = Math.max(0, Math.floor(Number(e.parameter.qty)) || 0);
+    return jsonOut_(decrementStock_(e.parameter.id || '', qty));
   }
   return jsonOut_({ error: 'Unknown action' });
 }

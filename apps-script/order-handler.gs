@@ -47,6 +47,35 @@ const DELIVERY_FEE = 12;
 const ORDER_ID_PREFIX = 'FL04-';
 const ORDER_ID_DIGITS = 6;
 
+// Must match INTERNAL_KEY in apps-script/admin-api.gs — sent when calling
+// its ?action=decrement-stock so a stranger who finds that URL can't
+// quietly zero out the catalog.
+const INTERNAL_KEY = 'flb04-internal-9c72e1a4';
+
+// Reduces each purchased product's Quantity in the "Filmlab04 Products"
+// sheet right after an order is recorded, so a product that sells out
+// shows "Sold out" immediately instead of staying orderable. Best-effort
+// per line — a failure here (e.g. the products endpoint being briefly
+// flaky, same platform issue documented elsewhere in this file) must
+// never lose or roll back the order itself, which is already saved by
+// the time this runs. Jun Min can always correct a quantity by hand in
+// admin.html if a call here doesn't land.
+function decrementStock_(items) {
+  (items || []).forEach(line => {
+    const qty = Math.max(0, Math.min(MAX_QTY_PER_LINE, Math.floor(Number(line.qty)) || 0));
+    if (!qty || !line.id) return;
+    try {
+      const url = PRODUCTS_ENDPOINT + '?action=decrement-stock'
+        + '&id=' + encodeURIComponent(line.id)
+        + '&qty=' + qty
+        + '&key=' + encodeURIComponent(INTERNAL_KEY);
+      UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    } catch (err) {
+      // Swallowed on purpose — see comment above.
+    }
+  });
+}
+
 // Sequential, human-friendly order/tracking numbers (FL04-000000,
 // FL04-000001, ...) instead of a random suffix. The client's own
 // generated ID is never trusted for this — same "never trust the
@@ -176,6 +205,8 @@ function recordOrder_(data) {
       data.deliveryMethod || 'Self-pickup',
       data.address || ''
     ]);
+
+    decrementStock_(data.items);
 
     return jsonOut_({ ok: true, orderId: orderId, subtotal: subtotal });
   } catch (err) {
