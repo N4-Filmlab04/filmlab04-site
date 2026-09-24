@@ -321,6 +321,26 @@ function doGet(e) {
     const qty = Math.max(0, Math.floor(Number(e.parameter.qty)) || 0);
     return jsonOut_(decrementStock_(e.parameter.id || '', qty, e.parameter.variant || ''));
   }
+  // These two used to be doPost-only, but POST requests to this Apps
+  // Script Web App deployment have been observed to hang indefinitely (no
+  // response, not even an error) — the same Google-side platform issue
+  // documented in apps-script/order-handler.gs, confirmed here directly
+  // (a live "Mark as paid" click waited 45s+ with nothing coming back).
+  // GET requests have consistently routed and executed correctly for
+  // every other action on this same endpoint, so these two small,
+  // URL-safe write actions moved to GET as well. save-all/upload-image
+  // stay POST-only — their payloads (the full product list, base64 image
+  // data) are too large to fit safely in a URL.
+  if (action === 'mark-order-paid') {
+    const email = verifyLogin_(e.parameter.idToken);
+    if (!email) return jsonOut_({ error: 'Not authorized' });
+    return jsonOut_(markOrderPaid_(e.parameter.orderId || ''));
+  }
+  if (action === 'set-checkout-maintenance') {
+    const email = verifyLogin_(e.parameter.idToken);
+    if (!email) return jsonOut_({ error: 'Not authorized' });
+    return jsonOut_(setCheckoutMaintenanceMode_(e.parameter.enabled === 'true'));
+  }
   return jsonOut_({ error: 'Unknown action' });
 }
 

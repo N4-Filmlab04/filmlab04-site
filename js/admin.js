@@ -49,6 +49,22 @@ async function adminPost(payload) {
   return body;
 }
 
+// GET counterpart for small, URL-safe write actions (mark-order-paid,
+// set-checkout-maintenance) — POST requests to this Apps Script
+// deployment have been observed to hang indefinitely with no response at
+// all (confirmed directly: a "Mark as paid" click waited 45s+ and never
+// came back), the same platform issue documented in order-handler.gs.
+// GET has been reliable for every other action here, so these two moved
+// off adminPost. save-all/upload-image stay on adminPost — their
+// payloads are too large to fit in a URL.
+async function adminGet(payload) {
+  const params = new URLSearchParams({ ...payload, idToken: __idToken });
+  const res = await fetch(`${ADMIN_ENDPOINT}?${params.toString()}`, { cache: 'no-store' });
+  const body = await res.json();
+  if (body.error) throw new Error(body.error === 'Not authorized' ? 'Your session has expired or you no longer have access. Please sign in again.' : body.error);
+  return body;
+}
+
 async function uploadImage(file) {
   const dataBase64 = await fileToBase64(file);
   const body = await adminPost({ action: 'upload-image', filename: file.name, mimeType: file.type, dataBase64 });
@@ -463,7 +479,7 @@ async function markOrderPaid(orderId, btn) {
   btn.disabled = true;
   btn.textContent = 'Marking...';
   try {
-    const result = await adminPost({ action: 'mark-order-paid', orderId });
+    const result = await adminGet({ action: 'mark-order-paid', orderId });
     if (!result.ok) throw new Error(result.error || 'Could not mark as paid');
     const order = __salesOrders.find(o => o.orderId === orderId);
     if (order) order.paymentStatus = 'Paid';
@@ -513,7 +529,7 @@ async function toggleMaintenanceMode() {
   toggle.disabled = true;
   status.textContent = 'Saving...';
   try {
-    const result = await adminPost({ action: 'set-checkout-maintenance', enabled });
+    const result = await adminGet({ action: 'set-checkout-maintenance', enabled });
     if (!result.ok) throw new Error(result.error || 'Could not update');
     status.textContent = enabled ? 'On — checkout shows WhatsApp fallback' : 'Off — checkout is live';
   } catch (err) {
