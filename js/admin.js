@@ -601,9 +601,15 @@ function initAdmin() {
 
   google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
-    callback: handleCredentialResponse
+    callback: handleCredentialResponse,
+    auto_select: true
   });
   google.accounts.id.renderButton(document.getElementById('admin-signin-btn'), { theme: 'outline', size: 'large' });
+  // Try a silent sign-in first so a page refresh doesn't force clicking the
+  // button again — Google only does this quietly if the browser still has
+  // your session and you haven't explicitly signed out (see signOut()'s
+  // disableAutoSelect call).
+  google.accounts.id.prompt();
 
   document.getElementById('admin-signout')?.addEventListener('click', signOut);
   document.getElementById('admin-import-json')?.addEventListener('click', importFromStaticJson);
