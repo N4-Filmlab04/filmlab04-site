@@ -61,9 +61,14 @@ function recordDropoff_(data) {
     }
 
     const subtotal = priceDropoff_(data);
+    // Generated here, not from data.submittedAt (the client's clock/timezone
+    // isn't trusted) — always Malaysia local time so what Jun Min sees in
+    // the sheet matches the wall clock, instead of UTC (8 hours behind).
+    // Same fix already applied to order-handler.gs's Orders sheet.
+    const submittedAt = Utilities.formatDate(new Date(), 'Asia/Kuala_Lumpur', "yyyy-MM-dd'T'HH:mm:ss");
 
     sheet.appendRow([
-      data.submittedAt || new Date().toISOString(),
+      submittedAt,
       data.name || '',
       data.phone || '',
       data.email || '',
