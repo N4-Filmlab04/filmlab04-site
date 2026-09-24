@@ -556,35 +556,51 @@ function showGateError(message) {
   el.hidden = !message;
 }
 
-async function handleCredentialResponse(response) {
-  __idToken = response.credential;
+const ADMIN_TOKEN_STORAGE_KEY = 'flb04AdminIdToken';
+
+// Shared by the Google Sign-In button callback and by the stored-token
+// check on page load, so a refresh can skip straight to re-verifying an
+// already-known token instead of forcing the Google account picker again.
+// The verification round-trip (this Apps Script deployment, which then
+// calls Google's tokeninfo endpoint itself) can take several seconds —
+// show something so it doesn't look stuck, same fix as checkout's
+// "Placing order..." button.
+async function verifyAndSignIn(idToken, { silent } = {}) {
+  __idToken = idToken;
   showGateError('');
-  // The verification round-trip (this Apps Script deployment, which then
-  // calls Google's tokeninfo endpoint itself) can take several seconds —
-  // show something so it doesn't look stuck, same fix as checkout's
-  // "Placing order..." button.
   const statusEl = document.getElementById('admin-gate-status');
-  if (statusEl) statusEl.hidden = false;
+  if (statusEl && !silent) statusEl.hidden = false;
   try {
-    const res = await fetch(`${ADMIN_ENDPOINT}?action=whoami&idToken=${encodeURIComponent(__idToken)}`);
+    const res = await fetch(`${ADMIN_ENDPOINT}?action=whoami&idToken=${encodeURIComponent(idToken)}`);
     const data = await res.json();
     if (!data.authorized) {
       __idToken = null;
-      showGateError('This Google account does not have access to the admin panel.');
+      sessionStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
+      if (!silent) showGateError('This Google account does not have access to the admin panel.');
       return;
     }
     __userEmail = data.email;
+    sessionStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, idToken);
     showSignedIn(data.email);
   } catch (err) {
-    showGateError('Could not verify sign-in. Please check your connection and try again.');
+    __idToken = null;
+    // The Google ID token itself expires after ~1hr — a stale stored token
+    // failing here just means "sign in again", not a real error, so stay
+    // quiet about it on the silent auto-restore path.
+    if (!silent) showGateError('Could not verify sign-in. Please check your connection and try again.');
   } finally {
     if (statusEl) statusEl.hidden = true;
   }
 }
 
+async function handleCredentialResponse(response) {
+  await verifyAndSignIn(response.credential);
+}
+
 function signOut() {
   __idToken = null;
   __userEmail = null;
+  sessionStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
   document.getElementById('admin-app').hidden = true;
   document.getElementById('admin-gate').hidden = false;
   if (window.google?.accounts?.id) google.accounts.id.disableAutoSelect();
@@ -601,15 +617,19 @@ function initAdmin() {
 
   google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
-    callback: handleCredentialResponse,
-    auto_select: true
+    callback: handleCredentialResponse
   });
   google.accounts.id.renderButton(document.getElementById('admin-signin-btn'), { theme: 'outline', size: 'large' });
-  // Try a silent sign-in first so a page refresh doesn't force clicking the
-  // button again — Google only does this quietly if the browser still has
-  // your session and you haven't explicitly signed out (see signOut()'s
-  // disableAutoSelect call).
-  google.accounts.id.prompt();
+
+  // Re-verify a token saved from an earlier sign-in this tab, so a refresh
+  // doesn't force clicking the Google button again. Google's One Tap
+  // "auto_select" silent re-login was tried first but modern Chrome's
+  // third-party-cookie/FedCM restrictions block it outright, so this
+  // sessionStorage-based approach is the reliable fallback — it just means
+  // "stay signed in for this tab until the token expires (~1hr) or you
+  // close the tab", not real Google session persistence.
+  const storedToken = sessionStorage.getItem(ADMIN_TOKEN_STORAGE_KEY);
+  if (storedToken) verifyAndSignIn(storedToken, { silent: true });
 
   document.getElementById('admin-signout')?.addEventListener('click', signOut);
   document.getElementById('admin-import-json')?.addEventListener('click', importFromStaticJson);
