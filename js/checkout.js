@@ -123,7 +123,7 @@ async function submitOrder(payload) {
   return submissionPromise;
 }
 
-function renderPaymentStep(orderId, subtotal, deliveryMethod, items, itemsText) {
+function renderPaymentStep(orderId, subtotal, deliveryMethod, items, itemsText, name, phone, email) {
   document.getElementById('pay-order-id').textContent = orderId;
   document.getElementById('pay-amount').textContent = subtotal.toFixed(2);
 
@@ -155,7 +155,7 @@ function renderPaymentStep(orderId, subtotal, deliveryMethod, items, itemsText) 
     const itemsLines = itemsText || (items || []).map((i, idx) =>
       `${idx + 1}. ${i.name}${i.variant ? ' (' + i.variant + ')' : ''} @ RM${i.price.toFixed(2)} x${i.qty}`
     ).join('\n');
-    const text = `Hi, here's my payment receipt for order ${orderId}:\n${itemsLines}\n\nTotal: RM${subtotal.toFixed(2)}`;
+    const text = `Hi, here's my payment receipt for order ${orderId}:\n${itemsLines}\n\nTotal: RM${subtotal.toFixed(2)}\n\nName: ${name}\nPhone: ${phone}\nEmail: ${email}`;
     waLink.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
   }
 }
@@ -262,7 +262,7 @@ function initCheckout() {
       // re-prices from the live catalog — both are authoritative. Fall
       // back to the locally generated ones only in the no-backend demo
       // path, where result.orderId/subtotal don't exist.
-      renderPaymentStep(result.orderId || orderId, typeof result.subtotal === 'number' ? result.subtotal : subtotal, deliveryMethod, items, result.itemsText);
+      renderPaymentStep(result.orderId || orderId, typeof result.subtotal === 'number' ? result.subtotal : subtotal, deliveryMethod, items, result.itemsText, name, phone, email);
       document.getElementById('step-payment').style.display = 'block';
       if (result.demo) showToast('Order placed (demo — not saved yet)');
     } catch (err) {
