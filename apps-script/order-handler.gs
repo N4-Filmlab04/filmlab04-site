@@ -270,7 +270,7 @@ function recordOrder_(data) {
 
     decrementStock_(priced.soldItems);
 
-    return jsonOut_({ ok: true, orderId: orderId, subtotal: subtotal });
+    return jsonOut_({ ok: true, orderId: orderId, subtotal: subtotal, itemsText: itemsText });
   } catch (err) {
     return jsonOut_({ ok: false, error: String(err) });
   }

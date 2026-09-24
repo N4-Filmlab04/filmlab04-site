@@ -123,7 +123,7 @@ async function submitOrder(payload) {
   return submissionPromise;
 }
 
-function renderPaymentStep(orderId, subtotal, deliveryMethod, items) {
+function renderPaymentStep(orderId, subtotal, deliveryMethod, items, itemsText) {
   document.getElementById('pay-order-id').textContent = orderId;
   document.getElementById('pay-amount').textContent = subtotal.toFixed(2);
 
@@ -143,9 +143,16 @@ function renderPaymentStep(orderId, subtotal, deliveryMethod, items) {
   // payment screenshot themselves once WhatsApp opens.
   const waLink = document.getElementById('pay-whatsapp-link');
   if (waLink) {
-    // Numbered, one-per-line — matches the format order-handler.gs writes
-    // into the Orders sheet's Items column.
-    const itemsLines = (items || []).map((i, idx) =>
+    // Prefer the server's itemsText — it's what actually got charged and
+    // recorded (quantities clamped to real stock, "[OUT OF STOCK]" /
+    // "[only N in stock]" notes included), so it always matches the total
+    // above it. Rebuilding this from the client's original cart `items`
+    // instead would show what the customer asked for, not what they were
+    // actually charged for — those can differ when stock ran out between
+    // adding to cart and checkout, and showing mismatched numbers next to
+    // the real total looks like a pricing bug. Only falls back to `items`
+    // in the no-backend demo path, where the server never priced anything.
+    const itemsLines = itemsText || (items || []).map((i, idx) =>
       `${idx + 1}. ${i.name}${i.variant ? ' (' + i.variant + ')' : ''} @ RM${i.price.toFixed(2)} x${i.qty}`
     ).join('\n');
     const text = `Hi, here's my payment receipt for order ${orderId}:\n${itemsLines}\n\nTotal: RM${subtotal.toFixed(2)}`;
@@ -255,7 +262,7 @@ function initCheckout() {
       // re-prices from the live catalog — both are authoritative. Fall
       // back to the locally generated ones only in the no-backend demo
       // path, where result.orderId/subtotal don't exist.
-      renderPaymentStep(result.orderId || orderId, typeof result.subtotal === 'number' ? result.subtotal : subtotal, deliveryMethod, items);
+      renderPaymentStep(result.orderId || orderId, typeof result.subtotal === 'number' ? result.subtotal : subtotal, deliveryMethod, items, result.itemsText);
       document.getElementById('step-payment').style.display = 'block';
       if (result.demo) showToast('Order placed (demo — not saved yet)');
     } catch (err) {
