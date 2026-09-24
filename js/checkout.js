@@ -37,12 +37,13 @@ function showCheckoutError(message) {
 // unreachable) — as opposed to a plain form-validation error, this gives
 // the customer a way to still get their order through, with their cart
 // pre-filled into the WhatsApp message so they don't have to retype it.
-function showOrderFailedNotice(items, subtotal, deliveryMethod, address) {
+function showOrderFailedNotice(items, subtotal, deliveryMethod, address, name, phone, email) {
   const lines = items.map((i, idx) =>
     `${idx + 1}. ${i.name}${i.variant ? ' (' + i.variant + ')' : ''} @ RM${i.price.toFixed(2)} x${i.qty}`
   ).join('\n');
   const deliveryLine = deliveryMethod === 'Delivery' ? `\n\nDeliver to: ${address}` : '\n\nSelf-pickup at store';
-  const text = `Hi, I'd like to place an order — our online checkout isn't working right now:\n\n${lines}\n\nSubtotal: RM${subtotal.toFixed(2)}${deliveryLine}`;
+  const contactLine = `\n\nName: ${name}\nPhone: ${phone}\nEmail: ${email}`;
+  const text = `Hi, I'd like to place an order — our online checkout isn't working right now:\n\n${lines}\n\nSubtotal: RM${subtotal.toFixed(2)}${deliveryLine}${contactLine}`;
   document.getElementById('co-whatsapp-link').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
   document.getElementById('co-order-failed').hidden = false;
 }
@@ -257,7 +258,7 @@ function initCheckout() {
       document.getElementById('step-payment').style.display = 'block';
       if (result.demo) showToast('Order placed (demo — not saved yet)');
     } catch (err) {
-      showOrderFailedNotice(items, subtotal, deliveryMethod, address);
+      showOrderFailedNotice(items, subtotal, deliveryMethod, address, name, phone, email);
     } finally {
       placeOrderBtn.disabled = false;
       placeOrderBtn.textContent = originalLabel;
