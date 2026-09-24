@@ -118,6 +118,31 @@ function fetchCatalogById_() {
   return null;
 }
 
+// Authoritative maintenance-mode check. js/checkout.js also checks this
+// client-side before submitting, but that check fails OPEN (a flaky
+// network moment reads as "not in maintenance", same Google Apps Script
+// platform flakiness documented throughout this file) — so a request can
+// still slip through to here even while maintenance mode is on. This is
+// the real gate: unlike fetchCatalogById_ below (which fails open and
+// still records the order, because losing an order is worse than a
+// pricing hiccup), this fails CLOSED — if the status can't be confirmed
+// after retrying, the order is blocked, not recorded. Jun Min asked for
+// maintenance mode to block 100% of orders, and a false "blocked" during
+// a rare total-outage moment is the acceptable tradeoff for that.
+function isMaintenanceModeOn_() {
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = UrlFetchApp.fetch(PRODUCTS_ENDPOINT + '?action=checkout-status', { muteHttpExceptions: true });
+      const data = JSON.parse(res.getContentText());
+      return !!data.maintenanceMode;
+    } catch (err) {
+      if (attempt < maxAttempts) Utilities.sleep(500);
+    }
+  }
+  return true;
+}
+
 // Recomputes each line's price from the real catalog (ignoring whatever
 // price the client sent) and returns the honest subtotal alongside a
 // display string. A line whose id isn't found in the catalog anymore is
@@ -202,6 +227,10 @@ function recordOrder_(data) {
   try {
     if (BLOCKED_ORDER_IDS.includes(data.orderId) || BLOCKED_PHONES.includes(String(data.phone || ''))) {
       return jsonOut_({ ok: true, orderId: data.orderId, subtotal: 0, blocked: true });
+    }
+
+    if (isMaintenanceModeOn_()) {
+      return jsonOut_({ ok: false, maintenanceMode: true, error: 'Checkout is temporarily under maintenance.' });
     }
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
