@@ -294,7 +294,7 @@ function initDropoff() {
         document.getElementById('dp-bank').textContent = PAYMENT_INFO.bankName || '—';
         document.getElementById('dp-account').textContent = PAYMENT_INFO.accountNumber || '—';
         document.getElementById('dp-holder').textContent = PAYMENT_INFO.accountHolder || '—';
-        const text = `Hi, here's my payment receipt for my film drop-off (${payload.rolls}x roll, ${payload.service}) — RM${subtotal.toFixed(2)}.`;
+        const text = `Hi, here's my payment receipt for my film drop-off (${payload.rolls}x roll, ${payload.service}) — RM${subtotal.toFixed(2)}.\n\nName: ${payload.name}\nPhone: ${payload.phone}\nEmail: ${payload.email}`;
         document.getElementById('dp-whatsapp-link').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
         form.hidden = true;
         document.getElementById('dropoff-payment-step').hidden = false;
