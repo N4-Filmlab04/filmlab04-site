@@ -97,50 +97,48 @@ function nextOrderId_() {
   }
 }
 
-// Retries a few times with a short pause — PRODUCTS_ENDPOINT has been
-// observed to intermittently return an HTML error page instead of JSON
-// for a request or two before recovering (a Google Apps Script platform
-// issue, not a bug in this code). Returns null if every attempt fails,
-// rather than letting a JSON.parse exception crash the whole order.
-function fetchCatalogById_() {
+// Fetches the maintenance-mode flag and the product catalog together in
+// one round trip (UrlFetchApp.fetchAll fires both requests concurrently)
+// instead of two sequential UrlFetchApp.fetch calls — each one already
+// costs a few seconds on this Apps Script deployment, so doing them one
+// after another was adding up to ~15s of pure waiting per order (measured
+// directly). Retries the pair together a few times with a short pause —
+// PRODUCTS_ENDPOINT has been observed to intermittently return an HTML
+// error page instead of JSON for a request or two before recovering (a
+// Google Apps Script platform issue, not a bug in this code).
+//
+// maintenanceMode fails CLOSED (true) if it can't be confirmed after
+// retrying — Jun Min asked for maintenance mode to block 100% of orders,
+// and a false "blocked" during a rare total-outage moment is the
+// acceptable tradeoff for that. catalog fails OPEN (null) instead — losing
+// an order to a pricing hiccup is worse, so priceOrder_ below still
+// records it (flagged, subtotal 0) rather than dropping it.
+function checkMaintenanceAndFetchCatalog_() {
   const maxAttempts = 3;
+  let maintenanceMode = null;
+  let catalog = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      const res = UrlFetchApp.fetch(PRODUCTS_ENDPOINT + '?action=products', { muteHttpExceptions: true });
-      const products = JSON.parse(res.getContentText());
-      const byId = {};
-      products.forEach(p => { byId[p.id] = p; });
-      return byId;
-    } catch (err) {
-      if (attempt < maxAttempts) Utilities.sleep(1000);
+    const responses = UrlFetchApp.fetchAll([
+      { url: PRODUCTS_ENDPOINT + '?action=checkout-status', muteHttpExceptions: true },
+      { url: PRODUCTS_ENDPOINT + '?action=products', muteHttpExceptions: true }
+    ]);
+    if (maintenanceMode === null) {
+      try {
+        maintenanceMode = !!JSON.parse(responses[0].getContentText()).maintenanceMode;
+      } catch (err) { /* retry below */ }
     }
-  }
-  return null;
-}
-
-// Authoritative maintenance-mode check. js/checkout.js also checks this
-// client-side before submitting, but that check fails OPEN (a flaky
-// network moment reads as "not in maintenance", same Google Apps Script
-// platform flakiness documented throughout this file) — so a request can
-// still slip through to here even while maintenance mode is on. This is
-// the real gate: unlike fetchCatalogById_ below (which fails open and
-// still records the order, because losing an order is worse than a
-// pricing hiccup), this fails CLOSED — if the status can't be confirmed
-// after retrying, the order is blocked, not recorded. Jun Min asked for
-// maintenance mode to block 100% of orders, and a false "blocked" during
-// a rare total-outage moment is the acceptable tradeoff for that.
-function isMaintenanceModeOn_() {
-  const maxAttempts = 3;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      const res = UrlFetchApp.fetch(PRODUCTS_ENDPOINT + '?action=checkout-status', { muteHttpExceptions: true });
-      const data = JSON.parse(res.getContentText());
-      return !!data.maintenanceMode;
-    } catch (err) {
-      if (attempt < maxAttempts) Utilities.sleep(500);
+    if (catalog === null) {
+      try {
+        const products = JSON.parse(responses[1].getContentText());
+        const byId = {};
+        products.forEach(p => { byId[p.id] = p; });
+        catalog = byId;
+      } catch (err) { /* retry below */ }
     }
+    if (maintenanceMode !== null && catalog !== null) break;
+    if (attempt < maxAttempts) Utilities.sleep(500);
   }
-  return true;
+  return { maintenanceMode: maintenanceMode === null ? true : maintenanceMode, catalog: catalog };
 }
 
 // Recomputes each line's price from the real catalog (ignoring whatever
@@ -161,8 +159,7 @@ function isMaintenanceModeOn_() {
 // up with the customer about the shortfall. Returns soldItems — the
 // clamped {id, qty} pairs actually sold — for decrementStock_ to use
 // instead of the client's original (possibly inflated) quantities.
-function priceOrder_(items) {
-  const catalog = fetchCatalogById_();
+function priceOrder_(items, catalog) {
   if (!catalog) {
     const parts = (items || []).map((line, i) => {
       const qty = Math.max(0, Math.min(MAX_QTY_PER_LINE, Math.floor(Number(line.qty)) || 0));
@@ -229,7 +226,8 @@ function recordOrder_(data) {
       return jsonOut_({ ok: true, orderId: data.orderId, subtotal: 0, blocked: true });
     }
 
-    if (isMaintenanceModeOn_()) {
+    const checked = checkMaintenanceAndFetchCatalog_();
+    if (checked.maintenanceMode) {
       return jsonOut_({ ok: false, maintenanceMode: true, error: 'Checkout is temporarily under maintenance.' });
     }
 
@@ -248,7 +246,7 @@ function recordOrder_(data) {
     // isn't trusted) — always Malaysia local time so what Jun Min sees in
     // the sheet matches the wall clock, instead of UTC (8 hours behind).
     const submittedAt = Utilities.formatDate(new Date(), 'Asia/Kuala_Lumpur', "yyyy-MM-dd'T'HH:mm:ss");
-    const priced = priceOrder_(data.items);
+    const priced = priceOrder_(data.items, checked.catalog);
     const notes = (data.notes || '') + (priced.flagged ? ' [NEEDS REVIEW: see Items — unrecognised product or insufficient stock]' : '');
     const isDelivery = data.deliveryMethod === 'Delivery';
     const subtotal = priced.subtotal + (isDelivery ? DELIVERY_FEE : 0);
