@@ -27,6 +27,20 @@ const PAYMENT_INFO = {
   accountHolder: 'N4 Camera Store (Retail) Sdn. Bhd.'
 };
 
+// Plain fetch() never times out on its own — on a flaky mobile connection
+// it can hang for minutes with the "Placing order…" button just sitting
+// there (seen directly: a real order took ~2 minutes to resolve on
+// mobile data, even though the order had already been recorded
+// server-side in well under 5s — the response on its way back just got
+// lost/delayed). This bounds how long any single request is allowed to
+// hang before we give up and show the WhatsApp fallback, instead of
+// leaving the customer staring at a frozen button.
+function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 function showCheckoutError(message) {
   const el = document.getElementById('co-error');
   el.textContent = message;
@@ -61,7 +75,7 @@ function hideOrderFailedNotice() {
 // handling) decide.
 async function checkoutMaintenanceMode() {
   try {
-    const res = await fetch(`${PRODUCTS_ENDPOINT}?action=checkout-status`);
+    const res = await fetchWithTimeout(`${PRODUCTS_ENDPOINT}?action=checkout-status`, {}, 10000);
     const data = await res.json();
     return !!data.maintenanceMode;
   } catch (err) {
@@ -104,7 +118,13 @@ async function submitOrder(payload) {
     submittedAt: payload.submittedAt,
     items: JSON.stringify(payload.items)
   });
-  const submissionPromise = fetch(`${ORDER_ENDPOINT}?${params.toString()}`, { cache: 'no-store' })
+  // A timeout here (or any other network failure) doesn't mean the order
+  // wasn't recorded — order-handler.gs may well have already finished
+  // writing it server-side before the response made it back to a flaky
+  // mobile connection. showOrderFailedNotice's WhatsApp text still gets
+  // the customer through to Jun Min either way, who can check
+  // track-order.html / the Orders sheet before assuming it needs redoing.
+  const submissionPromise = fetchWithTimeout(`${ORDER_ENDPOINT}?${params.toString()}`, { cache: 'no-store' }, 25000)
     .then(async res => {
       if (!res.ok) throw new Error('Could not place order — please try again or contact us directly.');
       const result = await res.json();
