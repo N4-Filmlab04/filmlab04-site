@@ -236,4 +236,16 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('.nav-cart')?.addEventListener('click', openCart);
   document.querySelector('.cart-overlay')?.addEventListener('click', closeCart);
   document.querySelector('.cart-close')?.addEventListener('click', closeCart);
+
+  // Mobile nav — .nav-links is hidden below 720px (see style.css), so this
+  // hamburger + dropdown panel is the only way phone visitors can reach
+  // Shop/Services/Blog from anywhere but the homepage's own buttons.
+  const hamburger = document.getElementById('nav-hamburger');
+  const panel = document.getElementById('nav-mobile-panel');
+  if (hamburger && panel) {
+    hamburger.addEventListener('click', () => {
+      const open = panel.classList.toggle('open');
+      hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  }
 });
