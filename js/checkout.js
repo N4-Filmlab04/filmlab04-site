@@ -124,7 +124,7 @@ async function submitOrder(payload) {
   // mobile connection. showOrderFailedNotice's WhatsApp text still gets
   // the customer through to Jun Min either way, who can check
   // track-order.html / the Orders sheet before assuming it needs redoing.
-  const submissionPromise = fetchWithTimeout(`${ORDER_ENDPOINT}?${params.toString()}`, { cache: 'no-store' }, 25000)
+  const submissionPromise = fetchWithTimeout(`${ORDER_ENDPOINT}?${params.toString()}`, { cache: 'no-store' }, 15000)
     .then(async res => {
       if (!res.ok) throw new Error('Could not place order — please try again or contact us directly.');
       const result = await res.json();
