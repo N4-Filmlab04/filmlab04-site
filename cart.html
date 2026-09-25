@@ -90,8 +90,8 @@
     </label>
     <p class="form-error" id="co-error" hidden></p>
     <div class="notice" id="co-order-failed" hidden style="text-align:left; margin-bottom:16px;">
-      <strong>Our order system is temporarily under maintenance</strong>
-      <p>Sorry about that — please message us on WhatsApp with what you'd like to order and we'll sort it out directly.</p>
+      <strong id="co-order-failed-title">Our order system is temporarily under maintenance</strong>
+      <p id="co-order-failed-body">Sorry about that — please message us on WhatsApp with what you'd like to order and we'll sort it out directly.</p>
       <a href="#" id="co-whatsapp-link" target="_blank" rel="noopener" class="btn btn-primary btn-sm">Message us on WhatsApp</a>
     </div>
     <button class="btn btn-primary btn-block" id="place-order-btn">Place order</button>
@@ -154,7 +154,7 @@
 <script src="js/cart.js?v=5"></script>
 <script src="js/country-codes.js?v=4"></script>
 <script src="js/phone-picker.js?v=4"></script>
-<script src="js/checkout.js?v=10"></script>
+<script src="js/checkout.js?v=11"></script>
 <script>
   async function renderPageCart() {
     const container = document.getElementById('page-cart-items');

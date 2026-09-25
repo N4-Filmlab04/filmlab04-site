@@ -51,7 +51,18 @@ function showCheckoutError(message) {
 // unreachable) — as opposed to a plain form-validation error, this gives
 // the customer a way to still get their order through, with their cart
 // pre-filled into the WhatsApp message so they don't have to retype it.
-function showOrderFailedNotice(items, subtotal, deliveryMethod, address, name, phone, email) {
+//
+// isMaintenance distinguishes a genuine admin-set maintenance block (the
+// server actually said maintenanceMode:true) from every other kind of
+// failure — a slow/dropped mobile connection, a timeout, an unexpected
+// server error. Those two used to share the same "under maintenance"
+// copy, which was actively misleading: a customer's request can time out
+// client-side while the order was already written server-side moments
+// earlier, and Jun Min would see "why does it say maintenance, I never
+// turned that on" even though it isn't really about maintenance mode at
+// all. The generic copy makes clear the order might have gone through
+// and to double-check before assuming it needs redoing.
+function showOrderFailedNotice(items, subtotal, deliveryMethod, address, name, phone, email, isMaintenance) {
   const isDelivery = deliveryMethod === 'Delivery';
   const lines = items.map((i, idx) =>
     `${idx + 1}. ${i.name}${i.variant ? ' (' + i.variant + ')' : ''} @ RM${i.price.toFixed(2)} x${i.qty}`
@@ -60,6 +71,16 @@ function showOrderFailedNotice(items, subtotal, deliveryMethod, address, name, p
   const contactLine = `\n\nName: ${name}\nPhone: ${phone}\nEmail: ${email}`;
   const text = `Hi, I'd like to place an order — our online checkout isn't working right now:\n\n${lines}\n\nSubtotal: RM${subtotal.toFixed(2)}${deliveryLine}${contactLine}`;
   document.getElementById('co-whatsapp-link').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+
+  const title = document.getElementById('co-order-failed-title');
+  const body = document.getElementById('co-order-failed-body');
+  if (isMaintenance) {
+    title.textContent = 'Our order system is temporarily under maintenance';
+    body.textContent = "Sorry about that — please message us on WhatsApp with what you'd like to order and we'll sort it out directly.";
+  } else {
+    title.textContent = "We couldn't confirm your order went through";
+    body.textContent = "This can happen on a slow or unstable connection — your order may already have gone through on our end. Please message us on WhatsApp with your order details and we'll check and confirm, rather than placing it again.";
+  }
   document.getElementById('co-order-failed').hidden = false;
 }
 
@@ -131,14 +152,23 @@ async function submitOrder(payload) {
       // order-handler.gs responds with HTTP 200 even when it caught an
       // internal error (e.g. the product catalog was temporarily
       // unreachable) — check its own ok field too, not just the HTTP status.
-      if (result.ok === false) throw new Error(result.error || 'Could not place order — please try again or contact us directly.');
+      if (result.ok === false) {
+        const err = new Error(result.error || 'Could not place order — please try again or contact us directly.');
+        // order-handler.gs sets this when its own server-side maintenance
+        // check blocked the order — the one case where the "under
+        // maintenance" copy in showOrderFailedNotice is actually accurate.
+        if (result.maintenanceMode) err.maintenanceMode = true;
+        throw err;
+      }
       return result;
     });
   const maintenancePromise = checkoutMaintenanceMode();
 
   if (await maintenancePromise) {
     submissionPromise.catch(() => {}); // don't leave an unhandled rejection
-    throw new Error('Checkout is temporarily under maintenance.');
+    const err = new Error('Checkout is temporarily under maintenance.');
+    err.maintenanceMode = true;
+    throw err;
   }
   return submissionPromise;
 }
@@ -286,7 +316,7 @@ function initCheckout() {
       document.getElementById('step-payment').style.display = 'block';
       if (result.demo) showToast('Order placed (demo — not saved yet)');
     } catch (err) {
-      showOrderFailedNotice(items, subtotal, deliveryMethod, address, name, phone, email);
+      showOrderFailedNotice(items, subtotal, deliveryMethod, address, name, phone, email, !!err.maintenanceMode);
     } finally {
       placeOrderBtn.disabled = false;
       placeOrderBtn.textContent = originalLabel;
