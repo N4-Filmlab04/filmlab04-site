@@ -220,10 +220,40 @@ function priceOrder_(items, catalog) {
 const BLOCKED_ORDER_IDS = ['FL04-WATCHTEST2'];
 const BLOCKED_PHONES = ['60000000000'];
 
+// Column L (12) holds Client Ref, a random id js/checkout.js generates
+// once per checkout attempt and reuses across retries of the SAME cart.
+// If a customer's first submission actually succeeded server-side but
+// they never saw the response (timeout, dropped connection) and click
+// "Place order" again, this recognises the retry and returns the order
+// that's already there instead of writing a second real one. Only the
+// fields js/checkout.js's response handling actually reads are returned.
+function findOrderByClientRef_(sheet, clientRef) {
+  if (sheet.getLastRow() < 2) return null;
+  const refs = sheet.getRange(2, 12, sheet.getLastRow() - 1, 1).getValues();
+  for (let i = 0; i < refs.length; i++) {
+    if (refs[i][0] && String(refs[i][0]) === String(clientRef)) {
+      const values = sheet.getRange(i + 2, 1, 1, 7).getValues()[0];
+      return { ok: true, orderId: values[0], subtotal: Number(values[6]) || 0, itemsText: values[5], duplicate: true };
+    }
+  }
+  return null;
+}
+
 function recordOrder_(data) {
   try {
     if (BLOCKED_ORDER_IDS.includes(data.orderId) || BLOCKED_PHONES.includes(String(data.phone || ''))) {
       return jsonOut_({ ok: true, orderId: data.orderId, subtotal: 0, blocked: true });
+    }
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+
+    // Checked before the maintenance gate and before touching the catalog
+    // — a retry of an order that already succeeded should return that
+    // success regardless of what maintenance mode happens to be set to
+    // by the time the retry arrives.
+    if (data.clientRef) {
+      const existing = findOrderByClientRef_(sheet, data.clientRef);
+      if (existing) return jsonOut_(existing);
     }
 
     const checked = checkMaintenanceAndFetchCatalog_();
@@ -231,13 +261,11 @@ function recordOrder_(data) {
       return jsonOut_({ ok: false, maintenanceMode: true, error: 'Checkout is temporarily under maintenance.' });
     }
 
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-
     if (sheet.getLastRow() === 0) {
       sheet.appendRow([
         'Order ID', 'Submitted At', 'Name', 'Phone', 'Email',
         'Items', 'Subtotal (RM)', 'Payment Status', 'Notes',
-        'Delivery Method', 'Address'
+        'Delivery Method', 'Address', 'Client Ref'
       ]);
     }
 
@@ -263,7 +291,8 @@ function recordOrder_(data) {
       'Pending',
       notes.trim(),
       data.deliveryMethod || 'Self-pickup',
-      data.address || ''
+      data.address || '',
+      data.clientRef || ''
     ]);
 
     decrementStock_(priced.soldItems);
@@ -307,7 +336,8 @@ function doGet(e) {
     notes: e.parameter.notes,
     deliveryMethod: e.parameter.deliveryMethod,
     address: e.parameter.address,
-    items: items
+    items: items,
+    clientRef: e.parameter.clientRef
   });
 }
 

@@ -41,6 +41,30 @@ function fetchWithTimeout(url, options, timeoutMs) {
   return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 
+// Duplicate-order protection: if a submission times out or the response
+// gets lost (see fetchWithTimeout above), the customer often just clicks
+// "Place order" again — but the first attempt may have already been
+// recorded server-side. Reusing the SAME clientRef across retries of the
+// same cart lets order-handler.gs recognise a retry and return the
+// existing order instead of creating a second real one. Keyed off a
+// snapshot of the cart's contents (not just "the current cart") so a
+// genuinely different order (customer went back and changed something)
+// gets its own fresh ref instead of being merged with a stale one.
+const CHECKOUT_REF_KEY = 'flb04CheckoutRef';
+function getCheckoutClientRef(cart) {
+  const cartSnapshot = JSON.stringify(cart);
+  try {
+    const stored = JSON.parse(sessionStorage.getItem(CHECKOUT_REF_KEY) || 'null');
+    if (stored && stored.cartSnapshot === cartSnapshot) return stored.ref;
+  } catch (err) { /* fall through and generate a fresh one */ }
+  const ref = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  try {
+    sessionStorage.setItem(CHECKOUT_REF_KEY, JSON.stringify({ cartSnapshot, ref }));
+  } catch (err) { /* sessionStorage unavailable — ref still works for this one attempt */ }
+  return ref;
+}
+
 function showCheckoutError(message) {
   const el = document.getElementById('co-error');
   el.textContent = message;
@@ -137,7 +161,8 @@ async function submitOrder(payload) {
     deliveryMethod: payload.deliveryMethod,
     address: payload.address,
     submittedAt: payload.submittedAt,
-    items: JSON.stringify(payload.items)
+    items: JSON.stringify(payload.items),
+    clientRef: payload.clientRef || ''
   });
   // A timeout here (or any other network failure) doesn't mean the order
   // wasn't recorded — order-handler.gs may well have already finished
@@ -293,7 +318,8 @@ function initCheckout() {
       address: deliveryMethod === 'Delivery' ? address : '',
       items,
       subtotal: subtotal.toFixed(2),
-      submittedAt: new Date().toISOString()
+      submittedAt: new Date().toISOString(),
+      clientRef: getCheckoutClientRef(cart)
     };
 
     // The Apps Script backend can take several seconds to respond (it's a
@@ -305,6 +331,10 @@ function initCheckout() {
     placeOrderBtn.textContent = 'Placing order…';
     try {
       const result = await submitOrder(payload);
+      // Clear it here rather than relying on the cart-snapshot mismatch —
+      // a customer buying the exact same items again later would
+      // otherwise reuse this ref and get silently merged with this order.
+      try { sessionStorage.removeItem(CHECKOUT_REF_KEY); } catch (err) { /* ignore */ }
       localStorage.setItem(CART_KEY, '[]');
       renderCartBadge();
       document.getElementById('step-details').style.display = 'none';
