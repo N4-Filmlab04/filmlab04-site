@@ -77,6 +77,13 @@ a:hover { color: var(--accent); }
 .nav-links a { font-weight: 500; font-size: 0.9375rem; color: var(--ink-soft); }
 .nav-links a:hover, .nav-links a.active { color: var(--ink); }
 
+/* Groups the cart icon and hamburger button together so .nav-inner's
+   flex space-between only splits logo vs. this group — without it, the
+   cart icon (a separate flex item) gets pushed to the dead center of the
+   nav bar on mobile once .nav-links is hidden, leaving an odd gap before
+   the hamburger on the far right. */
+.nav-actions { display: flex; align-items: center; gap: var(--space-3); }
+
 /* Hidden on desktop — only shown below the 720px breakpoint where
    .nav-links itself is hidden, so phone visitors still have a way to
    reach Shop/Services/Blog instead of only the logo and cart icon. */
