@@ -319,14 +319,14 @@ function jsonOut_(obj) {
 }
 
 // No-op — set up as a time-driven trigger (Apps Script editor: clock icon
-// on the left sidebar -> Add Trigger -> function keepWarm_ -> Time-driven
+// on the left sidebar -> Add Trigger -> function keepWarm -> Time-driven
 // -> Minutes timer -> Every 5 minutes -> Save) so this script's runtime
 // container doesn't go idle/cold between real orders. A request arriving
 // after a period of inactivity ("cold start") is measurably slower than
 // one arriving while the container is already warm — this just keeps it
 // warm by giving it something to do every few minutes. Doesn't touch the
 // sheet or call anything else, so it can't itself cause any side effects.
-function keepWarm_() {}
+function keepWarm() {}
 
 // Primary path — see the file header for why GET instead of POST.
 // action=submit-order carries the same fields the old POST body did,

@@ -296,12 +296,12 @@ function jsonOut_(obj) {
 }
 
 // No-op — set up as a time-driven trigger (Apps Script editor: clock icon
-// on the left sidebar -> Add Trigger -> function keepWarm_ -> Time-driven
+// on the left sidebar -> Add Trigger -> function keepWarm -> Time-driven
 // -> Minutes timer -> Every 5 minutes -> Save) so this script's runtime
 // container doesn't go idle/cold between real requests. order-handler.gs
 // calls into this project on almost every order (checkout-status,
 // products, decrement-stock), so this one being warm matters too.
-function keepWarm_() {}
+function keepWarm() {}
 
 function doGet(e) {
   const action = (e.parameter.action || 'products');
