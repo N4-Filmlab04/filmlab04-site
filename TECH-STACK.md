@@ -87,3 +87,4 @@
 
 - 真正的金流串接（Billplz / ToyyibPay / Stripe）+ 物流 API（J&T、Pos Laju）
 - 生意做大后，可能整套换架构（例如 WordPress + WooCommerce，或真正的资料库+后端），参考同行 filmlab.com.my 的做法
+- **下单速度进一步优化**（2026-09-26 记录，Jun Min 表示暂缓、之后再改）：目前实测稳定 4-6 秒，主因是 `order-handler.gs` 每笔单要透过网址呼叫 `admin-api.gs` 两次（查库存/维护模式、扣库存），每次都有 Apps Script 专案间转发的延迟。要压到 1-2 秒，得让 Orders 专案直接读写 Products 那张 Google Sheet（不透过网址呼叫），跳过这层延迟——但这样「结账维护模式」开关现在存放的位置（`admin-api.gs` 自己的私有设定，PropertiesService，别的专案读不到）就得搬到 Sheet 里，两个专案都要重新部署跟测试，範圍比较大
