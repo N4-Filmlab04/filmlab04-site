@@ -6,7 +6,7 @@
 >
 > 2026-09-25 更新：手机版导航加了汉堡选单（原本 `.nav-links` 在窄屏直接整组隐藏、完全没有替代，手机等于点不到 Shop）；维护模式检查拖慢下单速度（约15秒）的问题也修好了；结账现在有 client-side timeout，避免卡住不放——细节见下方各节。
 >
-> 2026-09-26 更新：结账加了防重复下单保护（client ref 去重，实测确认同一笔重试不会写成两行）；网站根目录补上 favicon.ico，修正 Google 搜索结果显示通用图示而不是真正 logo 的问题；下单速度进一步优化（扣库存改平行处理 + 两个 Apps Script 专案都加了保温 trigger），实测从偶尔20-30秒降到稳定4-6秒——细节见下方各节。
+> 2026-09-26 更新：结账加了防重复下单保护（client ref 去重，实测确认同一笔重试不会写成两行）；网站根目录补上 favicon.ico，修正 Google 搜索结果显示通用图示而不是真正 logo 的问题；下单速度进一步优化（扣库存改平行处理 + 两个 Apps Script 专案都加了保温 trigger），实测从偶尔20-30秒降到稳定4-6秒；手机版导航面板改成浮动悬浮 + 滑出动画 + 半透明背景遮罩；购物车图示点击会立刻跳页导致滑出动画看不到的问题也修好了；手机版商品格子改成两栏；admin 销售总览加了 Pending/Paid 数量统计——细节见下方各节。
 
 ## 资料流向
 
@@ -18,6 +18,10 @@
 - 字体：Google Fonts（Inter、Poppins）
 - 页面：index、shop、product、cart（结账流程做在这页里面，不是独立页面）、services（含冲洗预约表单）、blog、compare、admin、track-order（客人查订单状态用）
 - 手机导航：窄屏（≤720px）时桌面版的 Home/Shop/Services/Blog 连结会隐藏，改用汉堡选单（☰ 按钮）+ 下拉面板显示同样四个连结，逻辑写在 `js/cart.js`（每个页面都会载入这个档案）；汉堡按钮跟购物车图示包在同一个 `.nav-actions` 容器里、放在导览列最右边，两个挨在一起——分开当独立 flex 元素的话，购物车会被 `space-between` 排版挤到导览列正中间
+  - 面板一开始是塞进正常文件流的，打开时会把下面的内容（LOGO、首图等）往下推开——改成 `position: fixed`，`top` 用 JS 量 nav 实际高度去对齐，变成浮在内容上面，不会再推版
+  - 打开/关闭现在有滑出 + 淡入动画，背后加了半透明黑色遮罩（`.nav-mobile-backdrop`），点遮罩也能关闭菜单，跟一般手机网站的菜单手感一致
+  - 手机版商品格子（Shop 页 + 首页「本月精选」，都是同一个 `.product-grid`）从原本自动塌缩成1栏，改成强制2栏（参考同行 theduckroom.com 的手机版排版）；为了塞得下，说明文字跟 ISO/格式规格标签在手机上隐藏，价格跟按钮改上下排列
+- 购物车图示（`.nav-cart`）本身是个连去 cart.html 的连结，点击时原本会同时触发「打开抽屉」跟「跳转页面」，抽屉的滑出动画根本来不及播放就已经跳走了——修成只有页面上真的有抽屉（首页/Shop/Product/Services/Blog/Compare）时才拦下跳转、改成开抽屉；没有抽屉的页面（cart.html 本身、admin、track-order）維持正常跳转
 - Favicon：网站根目录有 `favicon.ico`（跟 `images/favicon.png` 是同一个 logo，只是格式/位置不同）——Google 搜索结果等爬虫习惯先去网站根目录找 `/favicon.ico`，不一定会看页面 `<link rel="icon">` 指到的路径，少了根目录这个档案就会显示通用图示而不是真正 logo。改了之后 Google 搜索结果的图示要等它自己重新爬网站才会更新，通常要几天到几周，没办法用代码强制刷新
 
 ## 托管 / 部署
@@ -30,7 +34,7 @@
 
 - Google Sheets 当资料库（3 张表：Filmlab04 Products 商品、Filmlab04 Orders 订单、Filmlab04 Drop-offs 冲洗预约）
 - Google Apps Script（3 个独立的 Web App，各自绑一张表）：
-  - `admin-api.gs` — 商品 CRUD、销售总览、图片上传（新增商品时要选是单一款式还是多颜色/款式；库存状态改成填 Quantity 数字自动判断，不再是手动切 in-stock/sold-out）
+  - `admin-api.gs` — 商品 CRUD、销售总览、图片上传（新增商品时要选是单一款式还是多颜色/款式；库存状态改成填 Quantity 数字自动判断，不再是手动切 in-stock/sold-out）；销售总览统计方块除了 Total orders / Total order value，也加了 Pending / Paid 各自的笔数——从整张 Orders 表算，不是只算画面上显示的最近 200 笔，所以订单一多也不会算错；四个方块的文字都置中显示
   - `order-handler.gs` — 处理购物车结账送来的订单
   - `dropoff-handler.gs` — 处理冲洗预约表单
 - Google Drive — 存放商品图片（透过 Apps Script 的 DriveApp 上传）
