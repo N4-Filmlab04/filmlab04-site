@@ -60,21 +60,31 @@ const INTERNAL_KEY = 'flb04-internal-9c72e1a4';
 // never lose or roll back the order itself, which is already saved by
 // the time this runs. Jun Min can always correct a quantity by hand in
 // admin.html if a call here doesn't land.
+//
+// Fires all lines' requests together with UrlFetchApp.fetchAll instead of
+// one UrlFetchApp.fetch per line in sequence — this call blocks the
+// customer's response until it's done, so a 3-line cart used to mean 3
+// sequential round trips to admin-api.gs (each with the same redirect-hop
+// latency documented throughout this file) stacked on top of everything
+// else. Measured directly contributing to some orders taking 20-30s+ to
+// respond. Now it's one concurrent batch regardless of cart size.
 function decrementStock_(items) {
-  (items || []).forEach(line => {
+  const requests = (items || []).map(line => {
     const qty = Math.max(0, Math.min(MAX_QTY_PER_LINE, Math.floor(Number(line.qty)) || 0));
-    if (!qty || !line.id) return;
-    try {
-      const url = PRODUCTS_ENDPOINT + '?action=decrement-stock'
-        + '&id=' + encodeURIComponent(line.id)
-        + '&qty=' + qty
-        + '&variant=' + encodeURIComponent(line.variant || '')
-        + '&key=' + encodeURIComponent(INTERNAL_KEY);
-      UrlFetchApp.fetch(url, { muteHttpExceptions: true });
-    } catch (err) {
-      // Swallowed on purpose — see comment above.
-    }
-  });
+    if (!qty || !line.id) return null;
+    const url = PRODUCTS_ENDPOINT + '?action=decrement-stock'
+      + '&id=' + encodeURIComponent(line.id)
+      + '&qty=' + qty
+      + '&variant=' + encodeURIComponent(line.variant || '')
+      + '&key=' + encodeURIComponent(INTERNAL_KEY);
+    return { url: url, muteHttpExceptions: true };
+  }).filter(Boolean);
+  if (requests.length === 0) return;
+  try {
+    UrlFetchApp.fetchAll(requests);
+  } catch (err) {
+    // Swallowed on purpose — see comment above.
+  }
 }
 
 // Sequential, human-friendly order/tracking numbers (FL04-000000,
