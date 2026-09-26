@@ -556,6 +556,7 @@ a:hover { color: var(--accent); }
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-soft);
   min-width: 180px;
+  text-align: center;
 }
 .admin-sales-stat span { display: block; font-size: 0.8125rem; color: var(--ink-soft); margin-bottom: var(--space-1); }
 .admin-sales-stat strong { font-size: 1.375rem; font-family: 'Poppins', sans-serif; }
