@@ -446,14 +446,41 @@ function salesOrderRow(o) {
     </tr>`;
 }
 
+// Boundaries are calendar days in the viewer's own local timezone (Jun
+// Min is in Malaysia, so this is Malaysia local time) — "Today" means
+// today on the wall clock, not a rolling 24h window.
+function orderMatchesDateFilter(order, filter) {
+  if (!filter) return true;
+  const submitted = new Date(order.submittedAt);
+  if (isNaN(submitted.getTime())) return false;
+  const now = new Date();
+  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const today = startOfDay(now);
+  if (filter === 'today') return submitted >= today;
+  if (filter === 'yesterday') {
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    return submitted >= yesterday && submitted < today;
+  }
+  if (filter === '7days') {
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6); // includes today = 7 days total
+    return submitted >= sevenDaysAgo;
+  }
+  if (filter === 'month') return submitted >= new Date(now.getFullYear(), now.getMonth(), 1);
+  return true;
+}
+
 function renderSalesTable() {
   const wrap = document.getElementById('admin-sales-wrap');
   if (!wrap) return;
 
   const query = (document.getElementById('admin-sales-search')?.value || '').trim().toLowerCase();
   const statusFilter = document.getElementById('admin-sales-status-filter')?.value || '';
+  const dateFilter = document.getElementById('admin-sales-date-filter')?.value || '';
   const filtered = __salesOrders.filter(o => {
     if (statusFilter && (o.paymentStatus || 'Pending') !== statusFilter) return false;
+    if (!orderMatchesDateFilter(o, dateFilter)) return false;
     if (!query) return true;
     return [o.orderId, o.name, o.items].some(v => String(v || '').toLowerCase().includes(query));
   });
@@ -657,6 +684,7 @@ function initAdmin() {
   document.getElementById('admin-import-json')?.addEventListener('click', importFromStaticJson);
   document.getElementById('admin-sales-search')?.addEventListener('input', renderSalesTable);
   document.getElementById('admin-sales-status-filter')?.addEventListener('change', renderSalesTable);
+  document.getElementById('admin-sales-date-filter')?.addEventListener('change', renderSalesTable);
   document.getElementById('admin-maintenance-toggle')?.addEventListener('change', toggleMaintenanceMode);
 
   const tabProducts = document.getElementById('admin-tab-products');
