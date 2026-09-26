@@ -233,7 +233,19 @@ function showToast(message) {
 
 document.addEventListener('DOMContentLoaded', () => {
   renderCartBadge();
-  document.querySelector('.nav-cart')?.addEventListener('click', openCart);
+  // .nav-cart is a real <a href="cart.html"> link (so it still works on
+  // cart.html/admin.html/track-order.html, which don't have the drawer
+  // markup at all) — but on pages that DO have the drawer, the click was
+  // opening it and then immediately following the link to cart.html in
+  // the same instant, so the slide/fade transition never had a chance to
+  // actually show. Only prevent the navigation when there's a drawer to
+  // open instead.
+  document.querySelector('.nav-cart')?.addEventListener('click', (e) => {
+    if (document.querySelector('.cart-drawer')) {
+      e.preventDefault();
+      openCart();
+    }
+  });
   document.querySelector('.cart-overlay')?.addEventListener('click', closeCart);
   document.querySelector('.cart-close')?.addEventListener('click', closeCart);
 
