@@ -242,6 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Shop/Services/Blog from anywhere but the homepage's own buttons.
   const hamburger = document.getElementById('nav-hamburger');
   const panel = document.getElementById('nav-mobile-panel');
+  const backdrop = document.getElementById('nav-mobile-backdrop');
   const navBar = document.querySelector('.nav');
   if (hamburger && panel && navBar) {
     // The panel is position:fixed (see style.css) so it floats over the
@@ -250,11 +251,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // each time in case the nav's height ever shifts (font loading,
     // viewport resize/rotation).
     const positionPanel = () => { panel.style.top = `${navBar.getBoundingClientRect().bottom}px`; };
+    const setOpen = (open) => {
+      panel.classList.toggle('open', open);
+      backdrop?.classList.toggle('open', open);
+      hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
     hamburger.addEventListener('click', () => {
       positionPanel();
-      const open = panel.classList.toggle('open');
-      hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+      setOpen(!panel.classList.contains('open'));
     });
+    // Tapping the dimmed backdrop closes the menu, same as tapping the
+    // hamburger again — standard mobile-menu behaviour.
+    backdrop?.addEventListener('click', () => setOpen(false));
     window.addEventListener('resize', () => { if (panel.classList.contains('open')) positionPanel(); });
   }
 });

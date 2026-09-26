@@ -104,9 +104,46 @@ a:hover { color: var(--accent); }
 /* position: fixed so opening it floats over the page content instead of
    pushing everything below the nav further down — top is set from JS
    (js/cart.js) to sit exactly under the nav bar, since that varies
-   slightly by device/font rendering. */
-.nav-mobile-panel { display: none; position: fixed; left: 0; right: 0; z-index: 45; flex-direction: column; border-bottom: 1px solid var(--line); background: var(--bg); box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08); }
-.nav-mobile-panel.open { display: flex; }
+   slightly by device/font rendering. Stays in the DOM at display:flex
+   always (rather than the old display:none/flex toggle) so opacity/
+   transform can actually transition — display isn't animatable, and
+   visibility/pointer-events keep it non-interactive and unreachable by
+   tab/screen-reader while closed. */
+.nav-mobile-panel {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 45;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+}
+.nav-mobile-panel.open { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0); }
+
+/* Dims the page behind the panel while it's open — same always-in-DOM,
+   opacity/visibility toggle pattern as the panel itself, just below it
+   in z-index so the nav bar (with the hamburger button, to close it
+   again) stays on top and undimmed. Tapping it closes the menu, same as
+   tapping the hamburger. */
+.nav-mobile-backdrop {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 44;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s;
+}
+.nav-mobile-backdrop.open { opacity: 1; visibility: visible; pointer-events: auto; }
 .nav-mobile-panel a { padding: var(--space-4) var(--space-6); font-weight: 500; color: var(--ink-soft); border-top: 1px solid var(--line); }
 .nav-mobile-panel a:first-child { border-top: none; }
 .nav-mobile-panel a:hover, .nav-mobile-panel a.active { color: var(--ink); }
