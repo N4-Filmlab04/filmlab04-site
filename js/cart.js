@@ -242,10 +242,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Shop/Services/Blog from anywhere but the homepage's own buttons.
   const hamburger = document.getElementById('nav-hamburger');
   const panel = document.getElementById('nav-mobile-panel');
-  if (hamburger && panel) {
+  const navBar = document.querySelector('.nav');
+  if (hamburger && panel && navBar) {
+    // The panel is position:fixed (see style.css) so it floats over the
+    // page instead of pushing content down when it opens — this just
+    // aligns its top edge to sit right under the nav bar, recalculated
+    // each time in case the nav's height ever shifts (font loading,
+    // viewport resize/rotation).
+    const positionPanel = () => { panel.style.top = `${navBar.getBoundingClientRect().bottom}px`; };
     hamburger.addEventListener('click', () => {
+      positionPanel();
       const open = panel.classList.toggle('open');
       hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
+    window.addEventListener('resize', () => { if (panel.classList.contains('open')) positionPanel(); });
   }
 });
