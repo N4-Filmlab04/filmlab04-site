@@ -195,11 +195,14 @@ function salesSummary_() {
   const values = sheet.getDataRange().getValues();
   const orders = [];
   let totalRevenue = 0;
+  let paidCount = 0;
+  let pendingCount = 0;
   for (let i = 1; i < values.length; i++) {
     const row = values[i];
     if (!row[0]) continue;
     const subtotal = Number(row[6]) || 0;
     totalRevenue += subtotal;
+    if (row[7] === 'Paid') paidCount++; else pendingCount++;
     orders.push({
       orderId: row[0],
       submittedAt: row[1],
@@ -218,6 +221,10 @@ function salesSummary_() {
   return {
     totalOrders: orders.length,
     totalRevenue: totalRevenue,
+    // Counted over every order in the sheet, not just recentOrders (which
+    // is capped at 200) — matters once order volume grows past that.
+    paidCount: paidCount,
+    pendingCount: pendingCount,
     recentOrders: orders.slice(0, 200)
   };
 }

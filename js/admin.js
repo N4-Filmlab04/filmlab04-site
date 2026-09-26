@@ -427,7 +427,7 @@ function formatDateTime(value) {
 }
 
 let __salesOrders = [];
-let __salesStats = { totalOrders: 0, totalRevenue: 0 };
+let __salesStats = { totalOrders: 0, totalRevenue: 0, paidCount: 0, pendingCount: 0 };
 
 function salesOrderRow(o) {
   const paid = o.paymentStatus === 'Paid';
@@ -462,6 +462,8 @@ function renderSalesTable() {
     <div class="admin-sales-stats">
       <div class="admin-sales-stat"><span>Total orders</span><strong>${__salesStats.totalOrders}</strong></div>
       <div class="admin-sales-stat"><span>Total order value (incl. unconfirmed payments)</span><strong>RM${__salesStats.totalRevenue.toFixed(2)}</strong></div>
+      <div class="admin-sales-stat"><span>Pending</span><strong>${__salesStats.pendingCount}</strong></div>
+      <div class="admin-sales-stat"><span>Paid</span><strong>${__salesStats.paidCount}</strong></div>
     </div>
     <div class="admin-table-scroll">
       <table class="admin-table">
@@ -482,7 +484,11 @@ async function markOrderPaid(orderId, btn) {
     const result = await adminGet({ action: 'mark-order-paid', orderId });
     if (!result.ok) throw new Error(result.error || 'Could not mark as paid');
     const order = __salesOrders.find(o => o.orderId === orderId);
-    if (order) order.paymentStatus = 'Paid';
+    if (order && order.paymentStatus !== 'Paid') {
+      order.paymentStatus = 'Paid';
+      __salesStats.paidCount++;
+      __salesStats.pendingCount--;
+    }
     renderSalesTable();
     showToast('Marked as paid');
   } catch (err) {
@@ -501,7 +507,7 @@ async function loadSales() {
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     __salesOrders = data.recentOrders;
-    __salesStats = { totalOrders: data.totalOrders, totalRevenue: data.totalRevenue };
+    __salesStats = { totalOrders: data.totalOrders, totalRevenue: data.totalRevenue, paidCount: data.paidCount, pendingCount: data.pendingCount };
     renderSalesTable();
   } catch (err) {
     wrap.innerHTML = `<p class="admin-error">${escapeHtml(err.message)}</p>`;
