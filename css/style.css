@@ -56,9 +56,10 @@ a:hover { color: var(--accent); }
   padding: 0 var(--space-6);
 }
 /* admin.html's page is data tables (Sales overview, Drop-offs), not prose
-   — a wider container means more columns fit before the table itself
-   needs to scroll horizontally. */
-.admin-wide-container { max-width: 1400px; }
+   — no max-width cap at all, so it uses the full browser window (still
+   respecting the side padding from .container) and columns fit without
+   scrolling on most screens. */
+.admin-wide-container { max-width: none; }
 
 /* Nav */
 .nav {
