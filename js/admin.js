@@ -548,17 +548,22 @@ function dropoffRow(d) {
     ? `${escapeHtml(d.method)} (${escapeHtml(d.courierProvider)}${d.trackingNumber ? ': ' + escapeHtml(d.trackingNumber) : ''})`
     : escapeHtml(d.method || '—');
   const serviceText = `${escapeHtml(d.service || '—')}${d.highResScan ? ' + high-res' : ''}`;
+  // Notes and Reference are two separate sheet columns — showing only one
+  // when both were filled in silently dropped the other (caught directly:
+  // a real drop-off had both, only Notes was visible).
+  const notesText = [d.reference ? `Ref: ${d.reference}` : '', d.notes || ''].filter(Boolean).join(' — ');
   return `
     <tr>
       <td>${escapeHtml(formatDateTime(d.submittedAt))}</td>
       <td>${escapeHtml(d.name)}</td>
       <td>${escapeHtml(d.phone)}</td>
+      <td>${escapeHtml(d.email || '—')}</td>
       <td>${methodText}</td>
       <td>${escapeHtml(String(d.rolls || '—'))}</td>
       <td>${serviceText}</td>
       <td>RM${(Number(d.subtotal) || 0).toFixed(2)}</td>
       <td>${escapeHtml(d.payment || '—')}</td>
-      <td>${escapeHtml(d.notes || d.reference || '')}</td>
+      <td>${escapeHtml(notesText)}</td>
     </tr>`;
 }
 
@@ -575,7 +580,7 @@ function renderDropoffsTable() {
     if (paymentFilter && d.payment !== paymentFilter) return false;
     if (!orderMatchesDateFilter(d, dateFilter)) return false;
     if (!query) return true;
-    return [d.name, d.phone, d.reference].some(v => String(v || '').toLowerCase().includes(query));
+    return [d.name, d.phone, d.email, d.reference].some(v => String(v || '').toLowerCase().includes(query));
   });
 
   wrap.innerHTML = `
@@ -584,8 +589,8 @@ function renderDropoffsTable() {
     </div>
     <div class="admin-table-scroll">
       <table class="admin-table">
-        <thead><tr><th>Time</th><th>Name</th><th>Phone</th><th>Method</th><th>Rolls</th><th>Service</th><th>Amount</th><th>Payment</th><th>Notes</th></tr></thead>
-        <tbody>${filtered.map(dropoffRow).join('') || `<tr><td colspan="9" class="muted">${__dropoffs.length ? 'No drop-offs match this search' : 'No drop-offs yet'}</td></tr>`}</tbody>
+        <thead><tr><th>Time</th><th>Name</th><th>Phone</th><th>Email</th><th>Method</th><th>Rolls</th><th>Service</th><th>Amount</th><th>Payment</th><th>Notes</th></tr></thead>
+        <tbody>${filtered.map(dropoffRow).join('') || `<tr><td colspan="10" class="muted">${__dropoffs.length ? 'No drop-offs match this search' : 'No drop-offs yet'}</td></tr>`}</tbody>
       </table>
     </div>`;
 }
