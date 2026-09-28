@@ -584,6 +584,11 @@ a:hover { color: var(--accent); }
   font-size: 0.8125rem;
 }
 .admin-table tbody tr:last-child td { border-bottom: none; }
+/* Time is always the first column (Sales overview and Drop-offs) — keeps
+   it on one line instead of wrapping into 3-4 short lines, which read
+   badly. The table already scrolls horizontally (.admin-table-scroll),
+   so a wider column here is fine. */
+.admin-table td:first-child, .admin-table th:first-child { white-space: nowrap; }
 .admin-row-actions { display: flex; gap: var(--space-2); white-space: nowrap; }
 .admin-editor {
   margin-top: var(--space-8);
