@@ -547,11 +547,9 @@ function dropoffRow(d) {
   const methodText = d.method === 'Mail / Courier' && d.courierProvider
     ? `${escapeHtml(d.method)} (${escapeHtml(d.courierProvider)}${d.trackingNumber ? ': ' + escapeHtml(d.trackingNumber) : ''})`
     : escapeHtml(d.method || '—');
-  const serviceText = `${escapeHtml(d.service || '—')}${d.highResScan ? ' + high-res' : ''}`;
-  // Notes and Reference are two separate sheet columns — showing only one
-  // when both were filled in silently dropped the other (caught directly:
-  // a real drop-off had both, only Notes was visible).
-  const notesText = [d.reference ? `Ref: ${d.reference}` : '', d.notes || ''].filter(Boolean).join(' — ');
+  // High-Res, Reference, and Notes are each their own sheet column — kept
+  // as separate table columns here too rather than merged into one, so
+  // none of them get lost in a combined string.
   return `
     <tr>
       <td>${escapeHtml(formatDateTime(d.submittedAt))}</td>
@@ -560,10 +558,12 @@ function dropoffRow(d) {
       <td>${escapeHtml(d.email || '—')}</td>
       <td>${methodText}</td>
       <td>${escapeHtml(String(d.rolls || '—'))}</td>
-      <td>${serviceText}</td>
+      <td>${escapeHtml(d.service || '—')}</td>
+      <td>${d.highResScan ? 'Yes' : 'No'}</td>
       <td>RM${(Number(d.subtotal) || 0).toFixed(2)}</td>
       <td>${escapeHtml(d.payment || '—')}</td>
-      <td>${escapeHtml(notesText)}</td>
+      <td>${escapeHtml(d.reference || '')}</td>
+      <td>${escapeHtml(d.notes || '')}</td>
     </tr>`;
 }
 
@@ -589,8 +589,8 @@ function renderDropoffsTable() {
     </div>
     <div class="admin-table-scroll">
       <table class="admin-table">
-        <thead><tr><th>Time</th><th>Name</th><th>Phone</th><th>Email</th><th>Method</th><th>Rolls</th><th>Service</th><th>Amount</th><th>Payment</th><th>Notes</th></tr></thead>
-        <tbody>${filtered.map(dropoffRow).join('') || `<tr><td colspan="10" class="muted">${__dropoffs.length ? 'No drop-offs match this search' : 'No drop-offs yet'}</td></tr>`}</tbody>
+        <thead><tr><th>Time</th><th>Name</th><th>Phone</th><th>Email</th><th>Method</th><th>Rolls</th><th>Service</th><th>High-Res</th><th>Amount</th><th>Payment</th><th>Reference</th><th>Notes</th></tr></thead>
+        <tbody>${filtered.map(dropoffRow).join('') || `<tr><td colspan="12" class="muted">${__dropoffs.length ? 'No drop-offs match this search' : 'No drop-offs yet'}</td></tr>`}</tbody>
       </table>
     </div>`;
 }
