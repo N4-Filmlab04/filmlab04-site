@@ -19,6 +19,9 @@
  * doGet ?action=sales         — requires idToken. Returns an orders summary
  *                                read from the separate "Filmlab04 Orders"
  *                                sheet, for the admin sales overview.
+ * doGet ?action=dropoffs      — requires idToken. Returns a drop-off booking
+ *                                summary read from the separate "Filmlab04
+ *                                Drop-offs" sheet, for the admin Drop-offs tab.
  * doGet ?action=order-status  — public, no login. Looks up one order by
  *                                orderId (that's the only thing a customer
  *                                needs to check their own order — see
@@ -51,7 +54,8 @@
  * Setup:
  * 1. Create a new Google Sheet, name it "Filmlab04 Products".
  * 2. Extensions -> Apps Script, delete the placeholder code, paste this file.
- * 3. Fill in ALLOWED_EMAILS, GOOGLE_CLIENT_ID, and ORDERS_SHEET_ID below.
+ * 3. Fill in ALLOWED_EMAILS, GOOGLE_CLIENT_ID, ORDERS_SHEET_ID, and
+ *    DROPOFFS_SHEET_ID below.
  * 4. Deploy -> New deployment -> type "Web app".
  *    - Execute as: Me
  *    - Who has access: Anyone
@@ -79,6 +83,10 @@ const INTERNAL_KEY = 'flb04-internal-9c72e1a4';
 // The spreadsheet ID of the existing "Filmlab04 Orders" sheet (from its URL:
 // docs.google.com/spreadsheets/d/THIS_PART/edit).
 const ORDERS_SHEET_ID = '1Wb6TD2hgpkbT6tOyFdUTADhOZxWVkNqPB_A1Y2P_vFI';
+
+// The spreadsheet ID of the existing "Filmlab04 Drop-offs" sheet, same
+// pattern as ORDERS_SHEET_ID above.
+const DROPOFFS_SHEET_ID = '1y7X7L2j2fpIGJqQuDI-C6tXYpvPCr8YGYf9XjMVDTxg';
 
 const HEADERS = ['ID', 'Brand', 'Name', 'Category', 'Price', 'Currency', 'Quantity', 'Data'];
 
@@ -229,6 +237,44 @@ function salesSummary_() {
   };
 }
 
+function getDropoffsSheet_() {
+  return SpreadsheetApp.openById(DROPOFFS_SHEET_ID).getSheets()[0];
+}
+
+// Columns match dropoff-handler.gs's header row exactly: Submitted At,
+// Name, Phone, Email, Method, Courier Provider, Tracking Number, Rolls,
+// Service, High-Res Scan, Subtotal (RM), Payment, Keep Strips, Strips
+// Return, Reference, Notes.
+function dropoffsSummary_() {
+  const sheet = getDropoffsSheet_();
+  const values = sheet.getDataRange().getValues();
+  const dropoffs = [];
+  for (let i = 1; i < values.length; i++) {
+    const row = values[i];
+    if (!row[1]) continue; // Name column — skip any blank row
+    dropoffs.push({
+      submittedAt: row[0],
+      name: row[1],
+      phone: row[2],
+      email: row[3],
+      method: row[4],
+      courierProvider: row[5],
+      trackingNumber: row[6],
+      rolls: row[7],
+      service: row[8],
+      highResScan: row[9] === true || row[9] === 'Yes',
+      subtotal: Number(row[10]) || 0,
+      payment: row[11],
+      keepStrips: row[12],
+      stripsReturn: row[13],
+      reference: row[14],
+      notes: row[15]
+    });
+  }
+  dropoffs.reverse(); // most recent first
+  return { totalDropoffs: dropoffs.length, recentDropoffs: dropoffs.slice(0, 200) };
+}
+
 // Sheet row index (1-based, matching getRange) of the order with this
 // orderId, or -1 if not found. Column A holds the order ID.
 function findOrderRow_(sheet, orderId) {
@@ -320,6 +366,11 @@ function doGet(e) {
     const email = verifyLogin_(e.parameter.idToken);
     if (!email) return jsonOut_({ error: 'Not authorized' });
     return jsonOut_(salesSummary_());
+  }
+  if (action === 'dropoffs') {
+    const email = verifyLogin_(e.parameter.idToken);
+    if (!email) return jsonOut_({ error: 'Not authorized' });
+    return jsonOut_(dropoffsSummary_());
   }
   if (action === 'order-status') {
     return jsonOut_(getOrderStatus_(e.parameter.orderId || ''));

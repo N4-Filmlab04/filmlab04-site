@@ -7,7 +7,7 @@
 <link rel="icon" type="image/png" href="images/favicon.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=10">
+<link rel="stylesheet" href="css/style.css?v=11">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
@@ -61,6 +61,7 @@
     <div class="admin-tabs">
       <button type="button" class="btn btn-primary btn-sm admin-tab-btn" id="admin-tab-products">Product catalog</button>
       <button type="button" class="btn btn-secondary btn-sm admin-tab-btn" id="admin-tab-sales">Sales overview</button>
+      <button type="button" class="btn btn-secondary btn-sm admin-tab-btn" id="admin-tab-dropoffs">Drop-offs</button>
     </div>
 
     <div class="notice" style="margin-top:var(--space-4); display:flex; align-items:center; justify-content:space-between; gap:16px;">
@@ -92,6 +93,26 @@
         </select>
       </div>
       <div id="admin-sales-wrap"></div>
+    </section>
+
+    <section class="section" id="admin-view-dropoffs" style="padding-top:24px;" hidden>
+      <h2>Drop-offs</h2>
+      <div class="admin-toolbar">
+        <input type="text" id="admin-dropoffs-search" placeholder="Search by name, phone, or reference...">
+        <select id="admin-dropoffs-payment-filter">
+          <option value="">All payment types</option>
+          <option value="Pay now">Pay now</option>
+          <option value="Pay later">Pay later</option>
+        </select>
+        <select id="admin-dropoffs-date-filter">
+          <option value="">All dates</option>
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
+          <option value="7days">Last 7 days</option>
+          <option value="month">This month</option>
+        </select>
+      </div>
+      <div id="admin-dropoffs-wrap"></div>
     </section>
 
     <section class="section" id="admin-view-products" style="padding-top:24px;">
@@ -243,6 +264,6 @@
 </footer>
 
 <script src="js/cart.js?v=8"></script>
-<script src="js/admin.js?v=9"></script>
+<script src="js/admin.js?v=10"></script>
 </body>
 </html>

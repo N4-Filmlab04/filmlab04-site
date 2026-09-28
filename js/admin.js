@@ -541,6 +541,70 @@ async function loadSales() {
   }
 }
 
+let __dropoffs = [];
+
+function dropoffRow(d) {
+  const methodText = d.method === 'Mail / Courier' && d.courierProvider
+    ? `${escapeHtml(d.method)} (${escapeHtml(d.courierProvider)}${d.trackingNumber ? ': ' + escapeHtml(d.trackingNumber) : ''})`
+    : escapeHtml(d.method || '—');
+  const serviceText = `${escapeHtml(d.service || '—')}${d.highResScan ? ' + high-res' : ''}`;
+  return `
+    <tr>
+      <td>${escapeHtml(formatDateTime(d.submittedAt))}</td>
+      <td>${escapeHtml(d.name)}</td>
+      <td>${escapeHtml(d.phone)}</td>
+      <td>${methodText}</td>
+      <td>${escapeHtml(String(d.rolls || '—'))}</td>
+      <td>${serviceText}</td>
+      <td>RM${(Number(d.subtotal) || 0).toFixed(2)}</td>
+      <td>${escapeHtml(d.payment || '—')}</td>
+      <td>${escapeHtml(d.notes || d.reference || '')}</td>
+    </tr>`;
+}
+
+function renderDropoffsTable() {
+  const wrap = document.getElementById('admin-dropoffs-wrap');
+  if (!wrap) return;
+
+  const query = (document.getElementById('admin-dropoffs-search')?.value || '').trim().toLowerCase();
+  const paymentFilter = document.getElementById('admin-dropoffs-payment-filter')?.value || '';
+  // orderMatchesDateFilter only looks at .submittedAt, so it works for
+  // drop-offs too even though its name says "order".
+  const dateFilter = document.getElementById('admin-dropoffs-date-filter')?.value || '';
+  const filtered = __dropoffs.filter(d => {
+    if (paymentFilter && d.payment !== paymentFilter) return false;
+    if (!orderMatchesDateFilter(d, dateFilter)) return false;
+    if (!query) return true;
+    return [d.name, d.phone, d.reference].some(v => String(v || '').toLowerCase().includes(query));
+  });
+
+  wrap.innerHTML = `
+    <div class="admin-sales-stats">
+      <div class="admin-sales-stat"><span>Total drop-offs</span><strong>${__dropoffs.length}</strong></div>
+    </div>
+    <div class="admin-table-scroll">
+      <table class="admin-table">
+        <thead><tr><th>Time</th><th>Name</th><th>Phone</th><th>Method</th><th>Rolls</th><th>Service</th><th>Amount</th><th>Payment</th><th>Notes</th></tr></thead>
+        <tbody>${filtered.map(dropoffRow).join('') || `<tr><td colspan="9" class="muted">${__dropoffs.length ? 'No drop-offs match this search' : 'No drop-offs yet'}</td></tr>`}</tbody>
+      </table>
+    </div>`;
+}
+
+async function loadDropoffs() {
+  const wrap = document.getElementById('admin-dropoffs-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<p class="muted">Loading...</p>';
+  try {
+    const res = await fetch(`${ADMIN_ENDPOINT}?action=dropoffs&idToken=${encodeURIComponent(__idToken)}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    __dropoffs = data.recentDropoffs;
+    renderDropoffsTable();
+  } catch (err) {
+    wrap.innerHTML = `<p class="admin-error">${escapeHtml(err.message)}</p>`;
+  }
+}
+
 async function loadMaintenanceToggle() {
   const toggle = document.getElementById('admin-maintenance-toggle');
   const status = document.getElementById('admin-maintenance-status');
@@ -589,6 +653,7 @@ async function loadProductsSection() {
 async function loadAdminApp() {
   loadProductsSection();
   loadSales();
+  loadDropoffs();
   loadMaintenanceToggle();
 }
 
@@ -685,23 +750,34 @@ function initAdmin() {
   document.getElementById('admin-sales-search')?.addEventListener('input', renderSalesTable);
   document.getElementById('admin-sales-status-filter')?.addEventListener('change', renderSalesTable);
   document.getElementById('admin-sales-date-filter')?.addEventListener('change', renderSalesTable);
+  document.getElementById('admin-dropoffs-search')?.addEventListener('input', renderDropoffsTable);
+  document.getElementById('admin-dropoffs-payment-filter')?.addEventListener('change', renderDropoffsTable);
+  document.getElementById('admin-dropoffs-date-filter')?.addEventListener('change', renderDropoffsTable);
   document.getElementById('admin-maintenance-toggle')?.addEventListener('change', toggleMaintenanceMode);
 
-  const tabProducts = document.getElementById('admin-tab-products');
-  const tabSales = document.getElementById('admin-tab-sales');
-  if (tabProducts && tabSales) {
-    const viewProducts = document.getElementById('admin-view-products');
-    const viewSales = document.getElementById('admin-view-sales');
+  const tabButtons = {
+    products: document.getElementById('admin-tab-products'),
+    sales: document.getElementById('admin-tab-sales'),
+    dropoffs: document.getElementById('admin-tab-dropoffs')
+  };
+  const tabViews = {
+    products: document.getElementById('admin-view-products'),
+    sales: document.getElementById('admin-view-sales'),
+    dropoffs: document.getElementById('admin-view-dropoffs')
+  };
+  if (tabButtons.products && tabButtons.sales) {
     const showTab = (tab) => {
-      viewProducts.hidden = tab !== 'products';
-      viewSales.hidden = tab !== 'sales';
-      tabProducts.classList.toggle('btn-primary', tab === 'products');
-      tabProducts.classList.toggle('btn-secondary', tab !== 'products');
-      tabSales.classList.toggle('btn-primary', tab === 'sales');
-      tabSales.classList.toggle('btn-secondary', tab !== 'sales');
+      Object.keys(tabViews).forEach(key => {
+        if (tabViews[key]) tabViews[key].hidden = key !== tab;
+        if (tabButtons[key]) {
+          tabButtons[key].classList.toggle('btn-primary', key === tab);
+          tabButtons[key].classList.toggle('btn-secondary', key !== tab);
+        }
+      });
     };
-    tabProducts.addEventListener('click', () => showTab('products'));
-    tabSales.addEventListener('click', () => showTab('sales'));
+    Object.keys(tabButtons).forEach(key => {
+      tabButtons[key]?.addEventListener('click', () => showTab(key));
+    });
   }
 
   // The product-editor UI only exists on admin.html, guard in case a future
