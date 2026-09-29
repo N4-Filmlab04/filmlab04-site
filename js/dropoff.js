@@ -35,17 +35,17 @@ const HIGHRES_FEE = 10;
 // the two, they're both in Alor Setar but different outlets. Source: N4's
 // outlet list (2026-09-29).
 const DROPOFF_OUTLETS = [
-  'N4-01 · Seberang Jaya, Penang — Lotus\'s Seberang Jaya',
-  'N4-05 · Sungai Petani, Kedah — Aman Jaya Mall',
-  'N4-06 · Seri Manjung, Perak — AEON Mall Seri Manjung',
-  'N4-07 · Alor Setar, Kedah — Aman Central',
-  'N4-08 · Kota Bharu, Kelantan — AEON Mall Kota Bharu',
+  'N4-01 · Seberang Jaya, Penang — Lotus\'s Seberang Jaya (1st floor)',
+  'N4-05 · Sungai Petani, Kedah — Aman Jaya Mall (1st floor)',
+  'N4-06 · Seri Manjung, Perak — AEON Mall Seri Manjung (1st floor)',
+  'N4-07 · Alor Setar, Kedah — Aman Central (2nd floor)',
+  'N4-08 · Kota Bharu, Kelantan — AEON Mall Kota Bharu (2nd floor)',
   'N4-09 · Bayan Lepas, Penang — Queensbay Mall (LG floor)',
   'N4-10 · Bayan Lepas, Penang — Queensbay Mall (3rd floor)',
-  'N4-11 · Ipoh, Perak — AEON Mall Kinta City',
-  'N4-12 · Perai, Penang — Sunway Carnival Mall',
+  'N4-11 · Ipoh, Perak — AEON Mall Kinta City (1st floor)',
+  'N4-12 · Perai, Penang — Sunway Carnival Mall (2nd floor)',
   'N4-13 · Petaling Jaya, Selangor — JioSpace',
-  'N4-14 · Kuala Lumpur — MyTOWN Shopping Centre'
+  'N4-14 · Kuala Lumpur — MyTOWN Shopping Centre (3rd floor)'
 ];
 
 function estimateDropoffTotal(service, rolls, highResScan) {
