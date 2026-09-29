@@ -28,13 +28,17 @@ const SERVICE_PRICES = {
 const HIGHRES_FEE = 10;
 
 // N4 Camera Store outlets customers can drop film at instead of mailing it
-// or walking into the Alor Setar (Pekan Melayu / Aman Central) lab — that
-// one is covered by the "Walk-in" option, so it's deliberately left out
-// here. Source: N4's outlet list (2026-09-29), outlet code N4-07 omitted.
+// or walking into the lab directly. N4-07 (Alor Setar — Aman Central) is a
+// separate outlet and IS listed here; the one deliberately left out is
+// N4-15 (Alor Setar — Pekan Melayu), which is the lab's own Walk-in
+// location and already covered by the "Walk-in" option — don't confuse
+// the two, they're both in Alor Setar but different outlets. Source: N4's
+// outlet list (2026-09-29).
 const DROPOFF_OUTLETS = [
   'N4-01 · Seberang Jaya, Penang — Lotus\'s Seberang Jaya',
   'N4-05 · Sungai Petani, Kedah — Aman Jaya Mall',
   'N4-06 · Seri Manjung, Perak — AEON Mall Seri Manjung',
+  'N4-07 · Alor Setar, Kedah — Aman Central',
   'N4-08 · Kota Bharu, Kelantan — AEON Mall Kota Bharu',
   'N4-09 · Bayan Lepas, Penang — Queensbay Mall (LG floor)',
   'N4-10 · Bayan Lepas, Penang — Queensbay Mall (3rd floor)',
