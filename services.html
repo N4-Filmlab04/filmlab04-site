@@ -133,6 +133,7 @@
         <div class="segmented" data-field="method">
           <button type="button" class="segmented-btn active" data-value="Walk-in">Walk-in</button>
           <button type="button" class="segmented-btn" data-value="Mail / Courier">Mail / Courier</button>
+          <button type="button" class="segmented-btn" data-value="Nearby outlet">Nearby outlet</button>
         </div>
       </div>
 
@@ -154,6 +155,15 @@
         <label class="form-field">Tracking number
           <input type="text" id="d-tracking" placeholder="e.g. EA123456789MY">
         </label>
+      </div>
+
+      <div id="outlet-field" hidden>
+        <label class="form-field">Which N4 Camera Store outlet?
+          <select id="d-outlet">
+            <option value="">Select…</option>
+          </select>
+        </label>
+        <p class="muted" style="font-size:0.8125rem; margin-top:-8px;">Drop your film at this outlet — they'll forward it to us for developing/scanning.</p>
       </div>
 
       <label class="form-field">Number of rolls
@@ -227,6 +237,7 @@
             <div class="receipt-row"><span>Method</span><strong id="p-method">Walk-in</strong></div>
             <div class="receipt-row" id="p-courier-row" hidden><span>Courier</span><strong id="p-courier">…</strong></div>
             <div class="receipt-row" id="p-tracking-row" hidden><span>Tracking No.</span><strong id="p-tracking">…</strong></div>
+            <div class="receipt-row" id="p-outlet-row" hidden><span>Outlet</span><strong id="p-outlet">…</strong></div>
             <div class="receipt-row"><span>Rolls</span><strong id="p-rolls">1</strong></div>
             <div class="receipt-row"><span>Service</span><strong id="p-service">Develop and scan</strong></div>
             <div class="receipt-row" id="p-highres-row" hidden><span>High-res scan</span><strong>+RM10 per roll</strong></div>
@@ -324,6 +335,6 @@
 <script src="js/cart.js?v=8"></script>
 <script src="js/country-codes.js?v=4"></script>
 <script src="js/phone-picker.js?v=4"></script>
-<script src="js/dropoff.js?v=5"></script>
+<script src="js/dropoff.js?v=6"></script>
 </body>
 </html>

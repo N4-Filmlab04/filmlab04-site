@@ -1,6 +1,6 @@
 # Filmlab04 网站技术栈
 
-> 整理时间：2026-09-06（最近更新：2026-09-28）　网址：https://filmlab04.com　repo：N4-Filmlab04/filmlab04-site
+> 整理时间：2026-09-06（最近更新：2026-09-29）　网址：https://filmlab04.com　repo：N4-Filmlab04/filmlab04-site
 
 > 2026-09-24 当天后续更新：维护模式改成后端强制拦截、WhatsApp 消息补齐联络资料/运费/真实商品清单、Mark as paid 卡死问题修好、Drop-off 时区修正——细节见下方各节。
 >
@@ -9,6 +9,8 @@
 > 2026-09-26 更新：结账加了防重复下单保护（client ref 去重，实测确认同一笔重试不会写成两行）；网站根目录补上 favicon.ico，修正 Google 搜索结果显示通用图示而不是真正 logo 的问题；下单速度进一步优化（扣库存改平行处理 + 两个 Apps Script 专案都加了保温 trigger），实测从偶尔20-30秒降到稳定4-6秒；手机版导航面板改成浮动悬浮 + 滑出动画 + 半透明背景遮罩；购物车图示点击会立刻跳页导致滑出动画看不到的问题也修好了；手机版商品格子改成两栏；admin 销售总览加了 Pending/Paid 数量统计、日期筛选（Today/Yesterday/Last 7 days/This month）——细节见下方各节。
 >
 > 2026-09-28 更新：admin 后台新增 **Drop-offs** 分页，从独立的 Filmlab04 Drop-offs 表读资料显示（之前预约资料完全没接进后台，只能开原始 Sheet 看）；admin 页面排版调整（分页按钮置中、表格 Time 栏不换行、拿掉页面宽度上限改用满版）——细节见下方各节。
+>
+> 2026-09-29 更新：冲洗预约表单（services.html）的「How are you sending it?」加了第三个选项 **Nearby outlet**——客人可以选择就近的 N4 分店代收底片，再由分店转寄过来，不用只能 Walk-in 或自己寄快递；细节见下方各节。
 
 ## 资料流向
 
@@ -25,6 +27,7 @@
   - 手机版商品格子（Shop 页 + 首页「本月精选」，都是同一个 `.product-grid`）从原本自动塌缩成1栏，改成强制2栏（参考同行 theduckroom.com 的手机版排版）；为了塞得下，说明文字跟 ISO/格式规格标签在手机上隐藏，价格跟按钮改上下排列
 - 购物车图示（`.nav-cart`）本身是个连去 cart.html 的连结，点击时原本会同时触发「打开抽屉」跟「跳转页面」，抽屉的滑出动画根本来不及播放就已经跳走了——修成只有页面上真的有抽屉（首页/Shop/Product/Services/Blog/Compare）时才拦下跳转、改成开抽屉；没有抽屉的页面（cart.html 本身、admin、track-order）維持正常跳转
 - admin.html 的资料表格（Sales overview、Drop-offs）：分页按钮（Product catalog / Sales overview / Drop-offs）置中；表格第一栏（Time）设 `white-space: nowrap`，不然日期时间会挤成好几行很难看，表格本来就有横向卷动（`.admin-table-scroll`）所以栏位变宽没差；admin 页面本身拿掉了 `.container` 原本 1120px 的宽度上限（用专属的 `.admin-wide-container`），满版显示、减少表格需要横向卷动的机会——这个上限只对 admin.html 拿掉，其他页面维持原本的阅读宽度
+- 冲洗预约表单（services.html / `js/dropoff.js`）「How are you sending it?」原本只有 Walk-in / Mail / Courier 两个选项，2026-09-29 加了第三个 **Nearby outlet**——选了之后会多出一个下拉选单，列出 N4 全马分店（写死在 `js/dropoff.js` 的 `DROPOFF_OUTLETS` 常数里），让客人选就近的分店代收；Alor Setar（Pekan Melayu / Aman Central，outlet code N4-07）**没有**放进这个清单，因为那间本来就是 Walk-in 直接送到的实体门市，不需要再列一次；分店资料来源是 Jun Min 提供的 N4 分店清单截图（2026-09-29），之后 N4 开新分店或分店资讯有变，要手动更新这个常数（前端）+ 如果要在 admin 显示也不用动，因为是直接存文字进 Google Sheet，不是查表
 - Favicon：网站根目录有 `favicon.ico`（跟 `images/favicon.png` 是同一个 logo，只是格式/位置不同）——Google 搜索结果等爬虫习惯先去网站根目录找 `/favicon.ico`，不一定会看页面 `<link rel="icon">` 指到的路径，少了根目录这个档案就会显示通用图示而不是真正 logo。改了之后 Google 搜索结果的图示要等它自己重新爬网站才会更新，通常要几天到几周，没办法用代码强制刷新
 
 ## 托管 / 部署
@@ -41,7 +44,7 @@
     - Drop-offs 分页透过新的 `?action=dropoffs` 读取，跟 Orders 一样用 Sheet ID（`DROPOFFS_SHEET_ID`）跨表读取，不是绑定在这个专案自己的表上——欄位对照要照 `dropoff-handler.gs` 实际写入的顺序（Submitted At、Name、Phone、Email、Method、Courier Provider、Tracking Number、Rolls、Service、High-Res Scan、Subtotal、Payment、Keep Strips、Strips Return、Reference、Notes），不能照 Sheet 第一行的栏位标题读——**那张表本身的标题列历史上少打了「Subtotal (RM)」这个栏位，导致从 Payment 开始往右的栏位标题全部错位**，但实际储存的资料本身没有错，是标题列本身没跟上），所以后端改用固定栏位顺序（index）去读，不要照标题列
     - Reference 跟 Notes 是两个独立栏位（客人可能两个都填，或用途不一样——Reference 常常填「参考编号/信封编号」，Notes 才是「有什么要提醒我们的」自由文字），画面上要分开显示，不能合并成一栏，不然会漏资料
   - `order-handler.gs` — 处理购物车结账送来的订单
-  - `dropoff-handler.gs` — 处理冲洗预约表单
+  - `dropoff-handler.gs` — 处理冲洗预约表单；2026-09-29 加了 `Outlet Branch` 栏位（第17栏，加在 Notes 后面，不是插在中间——避免打乱既有栏位的固定 index 读法），对应表单新增的 Nearby outlet 选项
 - Google Drive — 存放商品图片（透过 Apps Script 的 DriveApp 上传）
 - 有多个颜色/款式（variant）的商品，Quantity 可以细到每个颜色分开算——卖掉某个颜色只扣那个颜色的库存，归零自动变 sold-out，其他颜色不受影响（还没填过颜色数量的旧商品，暂时会退回用整体 Quantity 当预设值）
 

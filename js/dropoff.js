@@ -27,6 +27,23 @@ const SERVICE_PRICES = {
 };
 const HIGHRES_FEE = 10;
 
+// N4 Camera Store outlets customers can drop film at instead of mailing it
+// or walking into the Alor Setar (Pekan Melayu / Aman Central) lab — that
+// one is covered by the "Walk-in" option, so it's deliberately left out
+// here. Source: N4's outlet list (2026-09-29), outlet code N4-07 omitted.
+const DROPOFF_OUTLETS = [
+  'Seberang Jaya, Penang — Lotus\'s Seberang Jaya',
+  'Sungai Petani, Kedah — Aman Jaya Mall',
+  'Seri Manjung, Perak — AEON Mall Seri Manjung',
+  'Kota Bharu, Kelantan — AEON Mall Kota Bharu',
+  'Bayan Lepas, Penang — Queensbay Mall (LG floor)',
+  'Bayan Lepas, Penang — Queensbay Mall (3rd floor)',
+  'Ipoh, Perak — AEON Mall Kinta City',
+  'Perai, Penang — Sunway Carnival Mall',
+  'Petaling Jaya, Selangor — JioSpace',
+  'Kuala Lumpur — MyTOWN Shopping Centre'
+];
+
 function estimateDropoffTotal(service, rolls, highResScan) {
   const n = Math.max(0, Math.floor(Number(rolls)) || 0);
   return (SERVICE_PRICES[service] || 0) * n + (highResScan ? HIGHRES_FEE * n : 0);
@@ -73,14 +90,23 @@ function updateStripsReturnNote() {
 
 function updateCourierFieldVisibility() {
   const methodGroup = document.querySelector('.segmented[data-field="method"]');
+  const method = getSegmentedValue(methodGroup);
+
   const courierField = document.getElementById('courier-field');
-  const isCourier = getSegmentedValue(methodGroup) === 'Mail / Courier';
+  const isCourier = method === 'Mail / Courier';
   courierField.hidden = !isCourier;
   if (!isCourier) {
     document.getElementById('d-courier').value = '';
     document.getElementById('d-courier-other').value = '';
     document.getElementById('d-courier-other').hidden = true;
     document.getElementById('d-tracking').value = '';
+  }
+
+  const outletField = document.getElementById('outlet-field');
+  const isOutlet = method === 'Nearby outlet';
+  outletField.hidden = !isOutlet;
+  if (!isOutlet) {
+    document.getElementById('d-outlet').value = '';
   }
 }
 
@@ -112,6 +138,12 @@ function updatePreview() {
   if (isCourier) {
     document.getElementById('p-courier').textContent = courierProviderValue() || '…';
     document.getElementById('p-tracking').textContent = document.getElementById('d-tracking').value.trim() || '…';
+  }
+
+  const isOutlet = getSegmentedValue(methodGroup) === 'Nearby outlet';
+  document.getElementById('p-outlet-row').hidden = !isOutlet;
+  if (isOutlet) {
+    document.getElementById('p-outlet').textContent = document.getElementById('d-outlet').value || '…';
   }
 
   document.getElementById('p-rolls').textContent = document.getElementById('d-rolls').value || '1';
@@ -154,6 +186,7 @@ async function submitDropoff(payload) {
     method: payload.method,
     courierProvider: payload.courierProvider,
     trackingNumber: payload.trackingNumber,
+    outletBranch: payload.outletBranch,
     rolls: payload.rolls,
     service: payload.service,
     highResScan: payload.highResScan ? 'true' : 'false',
@@ -175,6 +208,14 @@ async function submitDropoff(payload) {
 function initDropoff() {
   const form = document.getElementById('dropoff-form');
   if (!form) return;
+
+  const outletSelect = document.getElementById('d-outlet');
+  DROPOFF_OUTLETS.forEach(label => {
+    const opt = document.createElement('option');
+    opt.value = label;
+    opt.textContent = label;
+    outletSelect.appendChild(opt);
+  });
 
   initPhonePicker('d-phone-country', updatePreview);
 
@@ -225,6 +266,7 @@ function initDropoff() {
       highResScan: document.getElementById('d-highres').checked,
       courierProvider: getSegmentedValue(methodGroup) === 'Mail / Courier' ? courierProviderValue() : '',
       trackingNumber: getSegmentedValue(methodGroup) === 'Mail / Courier' ? document.getElementById('d-tracking').value.trim() : '',
+      outletBranch: getSegmentedValue(methodGroup) === 'Nearby outlet' ? document.getElementById('d-outlet').value : '',
       payment: getSegmentedValue(paymentGroup),
       keepStrips: getSegmentedValue(stripsGroup),
       stripsReturn: getSegmentedValue(stripsGroup) === 'Yes, keep' ? getSegmentedValue(stripsReturnGroup) : '',
@@ -248,6 +290,10 @@ function initDropoff() {
     }
     if (payload.method === 'Mail / Courier' && !payload.trackingNumber) {
       showDropoffError('Please enter your tracking number.');
+      return;
+    }
+    if (payload.method === 'Nearby outlet' && !payload.outletBranch) {
+      showDropoffError('Please choose which outlet you\'ll drop your film at.');
       return;
     }
     if (!payload.payment) {

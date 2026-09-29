@@ -546,6 +546,8 @@ let __dropoffs = [];
 function dropoffRow(d) {
   const methodText = d.method === 'Mail / Courier' && d.courierProvider
     ? `${escapeHtml(d.method)} (${escapeHtml(d.courierProvider)}${d.trackingNumber ? ': ' + escapeHtml(d.trackingNumber) : ''})`
+    : d.method === 'Nearby outlet' && d.outletBranch
+    ? `${escapeHtml(d.method)} (${escapeHtml(d.outletBranch)})`
     : escapeHtml(d.method || '—');
   // High-Res, Reference, and Notes are each their own sheet column — kept
   // as separate table columns here too rather than merged into one, so

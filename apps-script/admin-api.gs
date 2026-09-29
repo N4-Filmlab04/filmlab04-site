@@ -244,7 +244,7 @@ function getDropoffsSheet_() {
 // Columns match dropoff-handler.gs's header row exactly: Submitted At,
 // Name, Phone, Email, Method, Courier Provider, Tracking Number, Rolls,
 // Service, High-Res Scan, Subtotal (RM), Payment, Keep Strips, Strips
-// Return, Reference, Notes.
+// Return, Reference, Notes, Outlet Branch.
 function dropoffsSummary_() {
   const sheet = getDropoffsSheet_();
   const values = sheet.getDataRange().getValues();
@@ -268,7 +268,8 @@ function dropoffsSummary_() {
       keepStrips: row[12],
       stripsReturn: row[13],
       reference: row[14],
-      notes: row[15]
+      notes: row[15],
+      outletBranch: row[16]
     });
   }
   dropoffs.reverse(); // most recent first

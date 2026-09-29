@@ -56,7 +56,7 @@ function recordDropoff_(data) {
       sheet.appendRow([
         'Submitted At', 'Name', 'Phone', 'Email', 'Method', 'Courier Provider',
         'Tracking Number', 'Rolls', 'Service', 'High-Res Scan', 'Subtotal (RM)',
-        'Payment', 'Keep Strips', 'Strips Return', 'Reference', 'Notes'
+        'Payment', 'Keep Strips', 'Strips Return', 'Reference', 'Notes', 'Outlet Branch'
       ]);
     }
 
@@ -83,7 +83,8 @@ function recordDropoff_(data) {
       data.keepStrips || '',
       data.stripsReturn || '',
       data.reference || '',
-      data.notes || ''
+      data.notes || '',
+      data.outletBranch || ''
     ]);
 
     return jsonOut_({ ok: true, subtotal: subtotal });
@@ -108,6 +109,7 @@ function doGet(e) {
     method: e.parameter.method,
     courierProvider: e.parameter.courierProvider,
     trackingNumber: e.parameter.trackingNumber,
+    outletBranch: e.parameter.outletBranch,
     rolls: e.parameter.rolls,
     service: e.parameter.service,
     highResScan: e.parameter.highResScan === 'true',
