@@ -17,15 +17,19 @@ const PAYMENT_INFO = {
 };
 const WHATSAPP_NUMBER = '6044389878';
 
-// Must match SERVICE_PRICES / HIGHRES_FEE in apps-script/dropoff-handler.gs
-// — that copy is authoritative, this one is only for the live preview
-// before submission and the no-backend demo path.
+// Must match SERVICE_PRICES / HIGHRES_FEE / OUTLET_FEE in
+// apps-script/dropoff-handler.gs — that copy is authoritative, this one is
+// only for the live preview before submission and the no-backend demo path.
 const SERVICE_PRICES = {
   'Develop and scan': 18,
   'Developing only': 13,
   'Cut film scanning only': 13
 };
 const HIGHRES_FEE = 10;
+// Flat fee (not per roll) for Nearby outlet drop-offs, covering the
+// outlet forwarding the film to us instead of the customer mailing it
+// themselves or walking it in directly.
+const OUTLET_FEE = 12;
 
 // N4 Camera Store outlets customers can drop film at instead of mailing it
 // or walking into the lab directly. N4-07 (Alor Setar — Aman Central) is a
@@ -48,9 +52,10 @@ const DROPOFF_OUTLETS = [
   'N4-14 · Kuala Lumpur — MyTOWN Shopping Centre (3rd floor)'
 ];
 
-function estimateDropoffTotal(service, rolls, highResScan) {
+function estimateDropoffTotal(service, rolls, highResScan, method) {
   const n = Math.max(0, Math.floor(Number(rolls)) || 0);
-  return (SERVICE_PRICES[service] || 0) * n + (highResScan ? HIGHRES_FEE * n : 0);
+  const outletFee = method === 'Nearby outlet' ? OUTLET_FEE : 0;
+  return (SERVICE_PRICES[service] || 0) * n + (highResScan ? HIGHRES_FEE * n : 0) + outletFee;
 }
 
 function formatDropoffDate(d) {
@@ -163,6 +168,7 @@ function updatePreview() {
   if (isOutlet) {
     document.getElementById('p-outlet').textContent = document.getElementById('d-outlet').value || '…';
   }
+  document.getElementById('p-outlet-fee-row').hidden = !isOutlet;
 
   document.getElementById('p-rolls').textContent = document.getElementById('d-rolls').value || '1';
   document.getElementById('p-service').textContent = document.getElementById('d-service').value;
@@ -188,7 +194,7 @@ async function submitDropoff(payload) {
   if (!DROPOFF_ENDPOINT) {
     // No backend configured yet — this is where the real submission will
     // POST once the Google Sheet + Apps Script Web App is set up.
-    return { ok: true, demo: true, subtotal: estimateDropoffTotal(payload.service, payload.rolls, payload.highResScan) };
+    return { ok: true, demo: true, subtotal: estimateDropoffTotal(payload.service, payload.rolls, payload.highResScan, payload.method) };
   }
   // Submitted over GET, not POST — same reason as checkout.js/order-handler.gs:
   // POST requests to this Apps Script deployment have been unreliable (a
@@ -355,7 +361,7 @@ function initDropoff() {
         // cart.html's checkout payment step.
         const subtotal = typeof result.subtotal === 'number'
           ? result.subtotal
-          : estimateDropoffTotal(payload.service, payload.rolls, payload.highResScan);
+          : estimateDropoffTotal(payload.service, payload.rolls, payload.highResScan, payload.method);
         document.getElementById('dp-amount').textContent = subtotal.toFixed(2);
         document.getElementById('dp-bank').textContent = PAYMENT_INFO.bankName || '—';
         document.getElementById('dp-account').textContent = PAYMENT_INFO.accountNumber || '—';

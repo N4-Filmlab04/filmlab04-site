@@ -23,21 +23,25 @@
  *    in js/dropoff.js.
  */
 
-// Must match SERVICE_PRICES / HIGHRES_FEE in js/dropoff.js — this copy is
-// authoritative (never trust a client-sent amount), the client's copy is
-// only for the live preview before submission.
+// Must match SERVICE_PRICES / HIGHRES_FEE / OUTLET_FEE in js/dropoff.js —
+// this copy is authoritative (never trust a client-sent amount), the
+// client's copy is only for the live preview before submission.
 const SERVICE_PRICES = {
   'Develop and scan': 18,
   'Developing only': 13,
   'Cut film scanning only': 13
 };
 const HIGHRES_FEE = 10;
+// Flat fee (not per roll) for Nearby outlet drop-offs, covering the
+// outlet forwarding the film to us.
+const OUTLET_FEE = 12;
 
 function priceDropoff_(data) {
   const rolls = Math.max(0, Math.floor(Number(data.rolls)) || 0);
   const base = SERVICE_PRICES[data.service] || 0;
   const highres = data.highResScan ? HIGHRES_FEE * rolls : 0;
-  return base * rolls + highres;
+  const outletFee = data.method === 'Nearby outlet' ? OUTLET_FEE : 0;
+  return base * rolls + highres + outletFee;
 }
 
 function jsonOut_(obj) {
