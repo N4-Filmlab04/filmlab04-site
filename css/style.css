@@ -901,6 +901,7 @@ a:hover { color: var(--accent); }
   cursor: pointer;
 }
 .segmented-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.segmented-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .notice {
   background: var(--surface-alt);

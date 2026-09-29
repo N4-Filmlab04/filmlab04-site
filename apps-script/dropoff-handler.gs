@@ -60,6 +60,11 @@ function recordDropoff_(data) {
       ]);
     }
 
+    // Nearby outlet drop-offs are always Pay now (no "pay later" way to
+    // collect from an outlet that isn't our own till) — enforced here too,
+    // not just in the form UI, since payment travels as a client-sent field.
+    const payment = data.method === 'Nearby outlet' ? 'Pay now' : (data.payment || '');
+
     const subtotal = priceDropoff_(data);
     // Generated here, not from data.submittedAt (the client's clock/timezone
     // isn't trusted) — always Malaysia local time so what Jun Min sees in
@@ -79,7 +84,7 @@ function recordDropoff_(data) {
       data.service || '',
       data.highResScan ? 'Yes' : 'No',
       subtotal,
-      data.payment || '',
+      payment,
       data.keepStrips || '',
       data.stripsReturn || '',
       data.reference || '',

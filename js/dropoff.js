@@ -108,6 +108,20 @@ function updateCourierFieldVisibility() {
   if (!isOutlet) {
     document.getElementById('d-outlet').value = '';
   }
+
+  // Nearby outlet drop-offs must be Pay now — there's no "pay later" way to
+  // collect from an outlet that isn't our own till, so lock the choice down
+  // instead of letting the customer pick Pay later and creating a payment
+  // gap. document.getElementById('payment-outlet-note') mirrors this in the UI.
+  const payLaterBtn = document.getElementById('btn-pay-later');
+  const paymentGroup = document.querySelector('.segmented[data-field="payment"]');
+  document.getElementById('payment-outlet-note').hidden = !isOutlet;
+  if (isOutlet) {
+    payLaterBtn.disabled = true;
+    setSegmented(paymentGroup, 'Pay now');
+  } else {
+    payLaterBtn.disabled = false;
+  }
 }
 
 function updateCourierOtherVisibility() {
@@ -267,7 +281,9 @@ function initDropoff() {
       courierProvider: getSegmentedValue(methodGroup) === 'Mail / Courier' ? courierProviderValue() : '',
       trackingNumber: getSegmentedValue(methodGroup) === 'Mail / Courier' ? document.getElementById('d-tracking').value.trim() : '',
       outletBranch: getSegmentedValue(methodGroup) === 'Nearby outlet' ? document.getElementById('d-outlet').value : '',
-      payment: getSegmentedValue(paymentGroup),
+      // Nearby outlet is always Pay now (see updateCourierFieldVisibility) —
+      // re-asserted here rather than trusting the segmented control's state.
+      payment: getSegmentedValue(methodGroup) === 'Nearby outlet' ? 'Pay now' : getSegmentedValue(paymentGroup),
       keepStrips: getSegmentedValue(stripsGroup),
       stripsReturn: getSegmentedValue(stripsGroup) === 'Yes, keep' ? getSegmentedValue(stripsReturnGroup) : '',
       reference: document.getElementById('d-ref').value.trim(),

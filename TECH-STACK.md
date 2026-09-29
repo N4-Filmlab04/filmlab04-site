@@ -10,7 +10,7 @@
 >
 > 2026-09-28 更新：admin 后台新增 **Drop-offs** 分页，从独立的 Filmlab04 Drop-offs 表读资料显示（之前预约资料完全没接进后台，只能开原始 Sheet 看）；admin 页面排版调整（分页按钮置中、表格 Time 栏不换行、拿掉页面宽度上限改用满版）——细节见下方各节。
 >
-> 2026-09-29 更新：冲洗预约表单（services.html）的「How are you sending it?」加了第三个选项 **Nearby outlet**——客人可以选择就近的 N4 分店代收底片，再由分店转寄过来，不用只能 Walk-in 或自己寄快递；细节见下方各节。
+> 2026-09-29 更新：冲洗预约表单（services.html）的「How are you sending it?」加了第三个选项 **Nearby outlet**——客人可以选择就近的 N4 分店代收底片，再由分店转寄过来，不用只能 Walk-in 或自己寄快递；选 Nearby outlet 时付款方式锁死只能 Pay now（前端锁 + 后端也强制改写，双重保险）——细节见下方各节。
 
 ## 资料流向
 
@@ -28,6 +28,7 @@
 - 购物车图示（`.nav-cart`）本身是个连去 cart.html 的连结，点击时原本会同时触发「打开抽屉」跟「跳转页面」，抽屉的滑出动画根本来不及播放就已经跳走了——修成只有页面上真的有抽屉（首页/Shop/Product/Services/Blog/Compare）时才拦下跳转、改成开抽屉；没有抽屉的页面（cart.html 本身、admin、track-order）維持正常跳转
 - admin.html 的资料表格（Sales overview、Drop-offs）：分页按钮（Product catalog / Sales overview / Drop-offs）置中；表格第一栏（Time）设 `white-space: nowrap`，不然日期时间会挤成好几行很难看，表格本来就有横向卷动（`.admin-table-scroll`）所以栏位变宽没差；admin 页面本身拿掉了 `.container` 原本 1120px 的宽度上限（用专属的 `.admin-wide-container`），满版显示、减少表格需要横向卷动的机会——这个上限只对 admin.html 拿掉，其他页面维持原本的阅读宽度
 - 冲洗预约表单（services.html / `js/dropoff.js`）「How are you sending it?」原本只有 Walk-in / Mail / Courier 两个选项，2026-09-29 加了第三个 **Nearby outlet**——选了之后会多出一个下拉选单，列出 N4 全马分店（写死在 `js/dropoff.js` 的 `DROPOFF_OUTLETS` 常数里），让客人选就近的分店代收；Alor Setar（Pekan Melayu / Aman Central，outlet code N4-07）**没有**放进这个清单，因为那间本来就是 Walk-in 直接送到的实体门市，不需要再列一次；分店资料来源是 Jun Min 提供的 N4 分店清单截图（2026-09-29），之后 N4 开新分店或分店资讯有变，要手动更新这个常数（前端）+ 如果要在 admin 显示也不用动，因为是直接存文字进 Google Sheet，不是查表
+  - 选 Nearby outlet 时「When to pay?」的 Pay later 按钮会自动变灰、不能点，付款方式强制锁定 Pay now——因为代收的分店不是自己的收银台，没有「之后再收款」这个流程；`dropoff-handler.gs` 后端也不信任前端送来的 payment 栏位，只要 method 是 Nearby outlet 一律强制改写成 Pay now 再存进表，双重防呆
 - Favicon：网站根目录有 `favicon.ico`（跟 `images/favicon.png` 是同一个 logo，只是格式/位置不同）——Google 搜索结果等爬虫习惯先去网站根目录找 `/favicon.ico`，不一定会看页面 `<link rel="icon">` 指到的路径，少了根目录这个档案就会显示通用图示而不是真正 logo。改了之后 Google 搜索结果的图示要等它自己重新爬网站才会更新，通常要几天到几周，没办法用代码强制刷新
 
 ## 托管 / 部署
