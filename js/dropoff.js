@@ -32,16 +32,16 @@ const HIGHRES_FEE = 10;
 // one is covered by the "Walk-in" option, so it's deliberately left out
 // here. Source: N4's outlet list (2026-09-29), outlet code N4-07 omitted.
 const DROPOFF_OUTLETS = [
-  'Seberang Jaya, Penang — Lotus\'s Seberang Jaya',
-  'Sungai Petani, Kedah — Aman Jaya Mall',
-  'Seri Manjung, Perak — AEON Mall Seri Manjung',
-  'Kota Bharu, Kelantan — AEON Mall Kota Bharu',
-  'Bayan Lepas, Penang — Queensbay Mall (LG floor)',
-  'Bayan Lepas, Penang — Queensbay Mall (3rd floor)',
-  'Ipoh, Perak — AEON Mall Kinta City',
-  'Perai, Penang — Sunway Carnival Mall',
-  'Petaling Jaya, Selangor — JioSpace',
-  'Kuala Lumpur — MyTOWN Shopping Centre'
+  'N4-01 · Seberang Jaya, Penang — Lotus\'s Seberang Jaya',
+  'N4-05 · Sungai Petani, Kedah — Aman Jaya Mall',
+  'N4-06 · Seri Manjung, Perak — AEON Mall Seri Manjung',
+  'N4-08 · Kota Bharu, Kelantan — AEON Mall Kota Bharu',
+  'N4-09 · Bayan Lepas, Penang — Queensbay Mall (LG floor)',
+  'N4-10 · Bayan Lepas, Penang — Queensbay Mall (3rd floor)',
+  'N4-11 · Ipoh, Perak — AEON Mall Kinta City',
+  'N4-12 · Perai, Penang — Sunway Carnival Mall',
+  'N4-13 · Petaling Jaya, Selangor — JioSpace',
+  'N4-14 · Kuala Lumpur — MyTOWN Shopping Centre'
 ];
 
 function estimateDropoffTotal(service, rolls, highResScan) {
