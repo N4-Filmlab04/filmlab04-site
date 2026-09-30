@@ -14,6 +14,8 @@ const GOOGLE_CLIENT_ID = '36912991192-drhj1aqehd4q9m9al25qil87kk43kmri.apps.goog
 
 let __adminProducts = [];
 let __editingId = null; // null while adding a new product
+let __adminPosts = [];
+let __editingPostId = null; // null while adding a new post
 let __idToken = null;
 let __userEmail = null;
 
@@ -79,6 +81,22 @@ async function fetchProducts() {
 
 async function saveAllProducts(products) {
   return adminPost({ action: 'save-all', products });
+}
+
+async function fetchPosts() {
+  const res = await fetch(`${ADMIN_ENDPOINT}?action=blog-posts`);
+  if (!res.ok) throw new Error('Could not load posts');
+  const data = await res.json();
+  // Not just an HTTP-status check: an old deployed backend that doesn't
+  // know the blog-posts action yet still responds 200 with
+  // {error: 'Unknown action'} rather than an array — surface that as a
+  // real error instead of letting renderBlogTable() crash on .map().
+  if (!Array.isArray(data)) throw new Error(data.error || 'Could not load posts');
+  return data;
+}
+
+async function saveAllPosts(posts) {
+  return adminPost({ action: 'save-posts', posts });
 }
 
 function adminRow(p) {
@@ -612,6 +630,143 @@ async function loadDropoffs() {
   }
 }
 
+function blogRow(post) {
+  return `
+    <tr>
+      <td>${escapeHtml(post.title)}</td>
+      <td>${escapeHtml(post.date)}</td>
+      <td>${escapeHtml(post.id)}</td>
+      <td class="admin-row-actions">
+        <button class="btn btn-secondary btn-sm" data-edit-post="${escapeHtml(post.id)}">Edit</button>
+        <button class="btn btn-secondary btn-sm" data-delete-post="${escapeHtml(post.id)}">Delete</button>
+      </td>
+    </tr>`;
+}
+
+function renderBlogTable() {
+  const wrap = document.querySelector('.admin-blog-table-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = `
+    <div class="admin-table-scroll">
+      <table class="admin-table">
+        <thead><tr><th>Title</th><th>Date</th><th>Post ID</th><th></th></tr></thead>
+        <tbody>${__adminPosts.map(blogRow).join('') || '<tr><td colspan="4" class="muted">No posts yet</td></tr>'}</tbody>
+      </table>
+    </div>`;
+
+  wrap.querySelectorAll('[data-edit-post]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const post = __adminPosts.find(p => p.id === btn.dataset.editPost);
+      openPostEditor(post);
+    });
+  });
+  wrap.querySelectorAll('[data-delete-post]').forEach(btn => {
+    btn.addEventListener('click', () => deletePost(btn.dataset.deletePost));
+  });
+}
+
+function fillPostForm(post) {
+  const p = post || {};
+  document.getElementById('p-id').value = p.id || '';
+  document.getElementById('p-date').value = p.date || '';
+  document.getElementById('p-title').value = p.title || '';
+  document.getElementById('p-excerpt').value = p.excerpt || '';
+  document.getElementById('p-cover').value = p.coverImage || '';
+  const content = Array.isArray(p.content) ? p.content : [p.content || ''];
+  document.getElementById('p-content').value = content.filter(Boolean).join('\n\n');
+}
+
+function readPostForm() {
+  const str = (id) => document.getElementById(id).value.trim();
+  return {
+    id: str('p-id'),
+    date: str('p-date'),
+    title: str('p-title'),
+    excerpt: str('p-excerpt'),
+    coverImage: str('p-cover'),
+    // Split on a blank line so each textarea paragraph becomes one array
+    // entry — matches how writeAllPosts_ joins them back with '\n\n'.
+    content: str('p-content').split(/\n\s*\n/).map(s => s.trim()).filter(Boolean)
+  };
+}
+
+function showPostError(message) {
+  const el = document.getElementById('admin-post-error');
+  el.textContent = message;
+  el.hidden = !message;
+}
+
+function openPostEditor(post) {
+  __editingPostId = post ? post.id : null;
+  document.getElementById('admin-post-editor-title').textContent = post ? `Edit ${post.title}` : 'New post';
+  fillPostForm(post);
+  showPostError('');
+  document.getElementById('admin-post-editor').hidden = false;
+  document.getElementById('admin-post-editor').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closePostEditor() {
+  document.getElementById('admin-post-editor').hidden = true;
+  __editingPostId = null;
+}
+
+async function deletePost(id) {
+  if (!confirm(`Delete "${id}"? This can't be undone.`)) return;
+  const next = __adminPosts.filter(p => p.id !== id);
+  try {
+    await saveAllPosts(next);
+    __adminPosts = next;
+    renderBlogTable();
+    showToast('Deleted');
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function savePostEditor() {
+  const parsed = readPostForm();
+
+  const required = ['id', 'title', 'date'];
+  const missing = required.filter(k => !parsed[k]);
+  if (missing.length) {
+    showPostError(`Missing required field(s): ${missing.join(', ')}`);
+    return;
+  }
+
+  const isNew = __editingPostId === null;
+  const idTaken = __adminPosts.some(p => p.id === parsed.id && p.id !== __editingPostId);
+  if (idTaken) {
+    showPostError(`Post id "${parsed.id}" is already used by another post.`);
+    return;
+  }
+
+  const next = isNew
+    ? [...__adminPosts, parsed]
+    : __adminPosts.map(p => (p.id === __editingPostId ? parsed : p));
+
+  try {
+    await saveAllPosts(next);
+    __adminPosts = next;
+    renderBlogTable();
+    closePostEditor();
+    showToast(isNew ? 'Post added' : 'Saved');
+  } catch (err) {
+    showPostError(err.message);
+  }
+}
+
+async function loadBlogSection() {
+  const wrap = document.querySelector('.admin-blog-table-wrap');
+  if (!wrap) return;
+  try {
+    __adminPosts = await fetchPosts();
+  } catch (err) {
+    wrap.innerHTML = `<p class="admin-error">${escapeHtml(err.message)}</p>`;
+    return;
+  }
+  renderBlogTable();
+}
+
 async function loadMaintenanceToggle() {
   const toggle = document.getElementById('admin-maintenance-toggle');
   const status = document.getElementById('admin-maintenance-status');
@@ -661,6 +816,7 @@ async function loadAdminApp() {
   loadProductsSection();
   loadSales();
   loadDropoffs();
+  loadBlogSection();
   loadMaintenanceToggle();
 }
 
@@ -765,12 +921,14 @@ function initAdmin() {
   const tabButtons = {
     products: document.getElementById('admin-tab-products'),
     sales: document.getElementById('admin-tab-sales'),
-    dropoffs: document.getElementById('admin-tab-dropoffs')
+    dropoffs: document.getElementById('admin-tab-dropoffs'),
+    blog: document.getElementById('admin-tab-blog')
   };
   const tabViews = {
     products: document.getElementById('admin-view-products'),
     sales: document.getElementById('admin-view-sales'),
-    dropoffs: document.getElementById('admin-view-dropoffs')
+    dropoffs: document.getElementById('admin-view-dropoffs'),
+    blog: document.getElementById('admin-view-blog')
   };
   if (tabButtons.products && tabButtons.sales) {
     const showTab = (tab) => {
@@ -847,6 +1005,30 @@ function initAdmin() {
         showToast('Image uploaded');
       } catch (err) {
         showAdminError(err.message);
+      } finally {
+        fileInput.disabled = false;
+        fileInput.value = '';
+      }
+    });
+  }
+
+  // The post-editor UI only exists on admin.html, same guard as above.
+  if (document.getElementById('admin-post-editor')) {
+    document.getElementById('admin-post-new').addEventListener('click', () => openPostEditor(null));
+    document.getElementById('admin-post-cancel').addEventListener('click', closePostEditor);
+    document.getElementById('admin-post-save').addEventListener('click', savePostEditor);
+    document.getElementById('admin-post-editor').addEventListener('change', async (e) => {
+      if (e.target.type !== 'file') return;
+      const fileInput = e.target;
+      const file = fileInput.files[0];
+      if (!file) return;
+      const textInput = fileInput.closest('.admin-image-field').querySelector('input[type=text]');
+      fileInput.disabled = true;
+      try {
+        textInput.value = await uploadImage(file);
+        showToast('Image uploaded');
+      } catch (err) {
+        showPostError(err.message);
       } finally {
         fileInput.disabled = false;
         fileInput.value = '';

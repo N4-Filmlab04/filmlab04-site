@@ -62,6 +62,7 @@
       <button type="button" class="btn btn-primary btn-sm admin-tab-btn" id="admin-tab-products">Product catalog</button>
       <button type="button" class="btn btn-secondary btn-sm admin-tab-btn" id="admin-tab-sales">Sales overview</button>
       <button type="button" class="btn btn-secondary btn-sm admin-tab-btn" id="admin-tab-dropoffs">Drop-offs</button>
+      <button type="button" class="btn btn-secondary btn-sm admin-tab-btn" id="admin-tab-blog">Blog</button>
     </div>
 
     <div class="notice" style="margin-top:var(--space-4); display:flex; align-items:center; justify-content:space-between; gap:16px;">
@@ -114,6 +115,53 @@
       </div>
       <div id="admin-dropoffs-wrap"></div>
     </section>
+
+    <section class="section" id="admin-view-blog" style="padding-top:24px;" hidden>
+      <div class="admin-toolbar">
+        <h2 style="margin:0;">Blog</h2>
+        <button class="btn btn-primary btn-sm" id="admin-post-new">+ New post</button>
+      </div>
+      <p class="muted" style="font-size:0.875rem;">Required fields: Post ID, Title, Date.</p>
+      <div class="admin-blog-table-wrap"></div>
+    </section>
+
+    <div class="admin-editor" id="admin-post-editor" hidden>
+      <div class="admin-editor-head">
+        <h3 class="mt-0" id="admin-post-editor-title">Edit post</h3>
+        <button class="btn btn-secondary btn-sm" id="admin-post-cancel">Cancel</button>
+      </div>
+
+      <div class="admin-field-row">
+        <label class="admin-field">Post ID <span class="muted">(used in the URL, e.g. blog-post.html?id=...)</span>
+          <input type="text" id="p-id" placeholder="how-we-pick-film-stocks">
+        </label>
+        <label class="admin-field">Date
+          <input type="text" id="p-date" placeholder="30 September 2026">
+        </label>
+      </div>
+
+      <label class="admin-field">Title
+        <input type="text" id="p-title" placeholder="How we pick which film stocks to carry">
+      </label>
+
+      <label class="admin-field">Excerpt <span class="muted">(shown on the blog list page)</span>
+        <textarea id="p-excerpt" rows="2" placeholder="A short summary shown on the list page..."></textarea>
+      </label>
+
+      <label class="admin-field">Cover image <span class="muted">(optional)</span>
+        <div class="admin-image-field">
+          <input type="text" id="p-cover" placeholder="images/blog/...">
+          <label class="btn btn-secondary btn-sm admin-upload-btn">Upload<input type="file" accept="image/*" hidden></label>
+        </div>
+      </label>
+
+      <label class="admin-field">Content <span class="muted">(leave a blank line between paragraphs)</span>
+        <textarea id="p-content" rows="12" placeholder="First paragraph...&#10;&#10;Second paragraph..."></textarea>
+      </label>
+
+      <p class="admin-error" id="admin-post-error" hidden></p>
+      <button class="btn btn-primary" id="admin-post-save">Save</button>
+    </div>
 
     <section class="section" id="admin-view-products" style="padding-top:24px;">
       <div class="admin-toolbar">
@@ -264,6 +312,6 @@
 </footer>
 
 <script src="js/cart.js?v=8"></script>
-<script src="js/admin.js?v=13"></script>
+<script src="js/admin.js?v=14"></script>
 </body>
 </html>

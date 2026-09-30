@@ -22,6 +22,10 @@
  * doGet ?action=dropoffs      — requires idToken. Returns a drop-off booking
  *                                summary read from the separate "Filmlab04
  *                                Drop-offs" sheet, for the admin Drop-offs tab.
+ * doGet ?action=blog-posts    — public, no login. Returns all blog posts as
+ *                                JSON, read from the separate "Filmlab04
+ *                                Blog" sheet (this is what blog.html/
+ *                                blog-post.html actually read).
  * doGet ?action=order-status  — public, no login. Looks up one order by
  *                                orderId (that's the only thing a customer
  *                                needs to check their own order — see
@@ -50,12 +54,19 @@
  *                                Payment Status to "Paid" in the Orders sheet.
  * doPost {action:'set-checkout-maintenance'} — requires idToken. Toggles
  *                                the maintenance-mode flag above.
+ * doPost {action:'save-posts'} — requires idToken. Replaces the whole blog
+ *                                post list, in the "Filmlab04 Blog" sheet
+ *                                (BLOG_HEADERS: Post ID | Title | Date |
+ *                                Excerpt | Cover Image | Content, one
+ *                                paragraph per blank-line-separated chunk
+ *                                in Content). Same clear-and-rewrite
+ *                                pattern as save-all for products.
  *
  * Setup:
  * 1. Create a new Google Sheet, name it "Filmlab04 Products".
  * 2. Extensions -> Apps Script, delete the placeholder code, paste this file.
- * 3. Fill in ALLOWED_EMAILS, GOOGLE_CLIENT_ID, ORDERS_SHEET_ID, and
- *    DROPOFFS_SHEET_ID below.
+ * 3. Fill in ALLOWED_EMAILS, GOOGLE_CLIENT_ID, ORDERS_SHEET_ID,
+ *    DROPOFFS_SHEET_ID, and BLOG_SHEET_ID below.
  * 4. Deploy -> New deployment -> type "Web app".
  *    - Execute as: Me
  *    - Who has access: Anyone
@@ -88,7 +99,12 @@ const ORDERS_SHEET_ID = '1Wb6TD2hgpkbT6tOyFdUTADhOZxWVkNqPB_A1Y2P_vFI';
 // pattern as ORDERS_SHEET_ID above.
 const DROPOFFS_SHEET_ID = '1y7X7L2j2fpIGJqQuDI-C6tXYpvPCr8YGYf9XjMVDTxg';
 
+// The spreadsheet ID of the "Filmlab04 Blog" sheet (blog posts, edited
+// from admin.html's Blog tab) — same pattern as ORDERS_SHEET_ID above.
+const BLOG_SHEET_ID = 'PASTE_BLOG_SHEET_ID_HERE';
+
 const HEADERS = ['ID', 'Brand', 'Name', 'Category', 'Price', 'Currency', 'Quantity', 'Data'];
+const BLOG_HEADERS = ['Post ID', 'Title', 'Date', 'Excerpt', 'Cover Image', 'Content'];
 
 function getSheet_() {
   return SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
@@ -276,6 +292,49 @@ function dropoffsSummary_() {
   return { totalDropoffs: dropoffs.length, recentDropoffs: dropoffs.slice(0, 200) };
 }
 
+function getBlogSheet_() {
+  return SpreadsheetApp.openById(BLOG_SHEET_ID).getSheets()[0];
+}
+
+// Content is stored as one cell with paragraphs separated by a blank line
+// (\n\n) — simplest thing that works for plain-text blog posts, no need
+// for a JSON blob or rich-text format. blog.html/blog-post.html read this
+// same action (public, no idToken) since it's public-facing content, same
+// as ?action=products.
+function readAllPosts_() {
+  const sheet = getBlogSheet_();
+  const values = sheet.getDataRange().getValues();
+  const posts = [];
+  for (let i = 1; i < values.length; i++) {
+    const row = values[i];
+    if (!row[0]) continue;
+    posts.push({
+      id: String(row[0]),
+      title: String(row[1] || ''),
+      date: String(row[2] || ''),
+      excerpt: String(row[3] || ''),
+      coverImage: String(row[4] || ''),
+      content: String(row[5] || '').split('\n\n').filter(p => p.trim())
+    });
+  }
+  return posts;
+}
+
+// Full clear-and-rewrite on every save, same pattern as
+// writeAllProducts_ — admin.html's Blog tab holds the whole post list
+// client-side and saves it back in one shot rather than editing rows
+// individually.
+function writeAllPosts_(posts) {
+  const sheet = getBlogSheet_();
+  sheet.clear();
+  sheet.appendRow(BLOG_HEADERS);
+  const rows = posts.map(p => [
+    p.id, p.title || '', p.date || '', p.excerpt || '', p.coverImage || '',
+    (Array.isArray(p.content) ? p.content : [p.content || '']).join('\n\n')
+  ]);
+  if (rows.length) sheet.getRange(2, 1, rows.length, BLOG_HEADERS.length).setValues(rows);
+}
+
 // Sheet row index (1-based, matching getRange) of the order with this
 // orderId, or -1 if not found. Column A holds the order ID.
 function findOrderRow_(sheet, orderId) {
@@ -373,6 +432,11 @@ function doGet(e) {
     if (!email) return jsonOut_({ error: 'Not authorized' });
     return jsonOut_(dropoffsSummary_());
   }
+  // Public, no idToken — blog.html/blog-post.html read this for every
+  // visitor, same as ?action=products.
+  if (action === 'blog-posts') {
+    return jsonOut_(readAllPosts_());
+  }
   if (action === 'order-status') {
     return jsonOut_(getOrderStatus_(e.parameter.orderId || ''));
   }
@@ -423,6 +487,10 @@ function doPost(e) {
   if (body.action === 'upload-image') {
     const url = uploadImage_(body.filename, body.mimeType, body.dataBase64);
     return jsonOut_({ url: url });
+  }
+  if (body.action === 'save-posts') {
+    writeAllPosts_(body.posts || []);
+    return jsonOut_({ ok: true });
   }
   if (body.action === 'mark-order-paid') {
     return jsonOut_(markOrderPaid_(body.orderId || ''));
