@@ -101,7 +101,7 @@ const DROPOFFS_SHEET_ID = '1y7X7L2j2fpIGJqQuDI-C6tXYpvPCr8YGYf9XjMVDTxg';
 
 // The spreadsheet ID of the "Filmlab04 Blog" sheet (blog posts, edited
 // from admin.html's Blog tab) — same pattern as ORDERS_SHEET_ID above.
-const BLOG_SHEET_ID = 'PASTE_BLOG_SHEET_ID_HERE';
+const BLOG_SHEET_ID = '1HYRPD-qlpdj5oKO7Yg86S4rD4xJN-FYdpUeD5kfVxrI';
 
 const HEADERS = ['ID', 'Brand', 'Name', 'Category', 'Price', 'Currency', 'Quantity', 'Data'];
 const BLOG_HEADERS = ['Post ID', 'Title', 'Date', 'Excerpt', 'Cover Image', 'Content'];
