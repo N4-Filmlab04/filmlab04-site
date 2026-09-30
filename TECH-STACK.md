@@ -12,7 +12,7 @@
 >
 > 2026-09-29 更新：冲洗预约表单（services.html）的「How are you sending it?」加了第三个选项 **Nearby outlet**——客人可以选择就近的 N4 分店代收底片，再由分店转寄过来，不用只能 Walk-in 或自己寄快递；选 Nearby outlet 时付款方式锁死只能 Pay now（前端锁 + 后端也强制改写，双重保险）；加收 RM12 分店转寄费——细节见下方各节。
 >
-> 2026-09-30 更新：Nearby outlet 的 Pay now WhatsApp 收据文字补上 Outlet 那一行，不然只看收据不知道客人是丢在哪一间分店——细节见下方各节。
+> 2026-09-30 更新：Nearby outlet 的 Pay now WhatsApp 收据文字补上 Outlet 那一行，不然只看收据不知道客人是丢在哪一间分店；Blog 从「全部文章塞在同一页」改成「列表页 + 每篇文章自己的页面」（跟 shop/product 同一个做法）——细节见下方各节。
 
 ## 资料流向
 
@@ -22,7 +22,8 @@
 
 - 纯 HTML / CSS / JavaScript（没有用 React、Vue 这类框架）
 - 字体：Google Fonts（Inter、Poppins）
-- 页面：index、shop、product、cart（结账流程做在这页里面，不是独立页面）、services（含冲洗预约表单）、blog、compare、admin、track-order（客人查订单状态用）
+- 页面：index、shop、product、cart（结账流程做在这页里面，不是独立页面）、services（含冲洗预约表单）、blog（文章列表）、blog-post（单篇文章，读网址 `?id=...`）、compare、admin、track-order（客人查订单状态用）
+- Blog：2026-09-30 从「所有文章塞在 blog.html 同一页」改成「列表页 + 每篇文章自己的页面」，做法照抄 shop.html/product.html 那一套——文章资料放在 `data/posts.json`（纯静态档案，不像商品那样接 Google Sheet，改文章内容要直接编辑这个 JSON、git push，不能从 admin.html 改）；`js/blog.js` 负责在 blog.html 渲染列表（`.blog-list` 容器）、`js/blog-post.js` 负责在 blog-post.html 读网址的 `?id=` 渲染单篇（`.post-detail` 容器），两个页面都会载入 `js/blog.js`（`blog-post.js` 靠它的 `loadPosts()` 抓资料，所以载入顺序要在 `blog-post.js` 前面）；每篇文章：`id`（网址用，小写连字号）、`title`、`date`、`excerpt`（列表页摘要）、`coverImage`（可留空——跟商品图不同，留空就直接不显示图片区块，不会有「photo coming soon」占位，纯文字文章不需要硬塞一个空图框）、`content`（字串阵列，每个元素渲染成一个段落）；目前两篇还是占位文字（date 写「Replace with real date」），等 Jun Min 给真实文章内容跟日期再换
 - 手机导航：窄屏（≤720px）时桌面版的 Home/Shop/Services/Blog 连结会隐藏，改用汉堡选单（☰ 按钮）+ 下拉面板显示同样四个连结，逻辑写在 `js/cart.js`（每个页面都会载入这个档案）；汉堡按钮跟购物车图示包在同一个 `.nav-actions` 容器里、放在导览列最右边，两个挨在一起——分开当独立 flex 元素的话，购物车会被 `space-between` 排版挤到导览列正中间
   - 面板一开始是塞进正常文件流的，打开时会把下面的内容（LOGO、首图等）往下推开——改成 `position: fixed`，`top` 用 JS 量 nav 实际高度去对齐，变成浮在内容上面，不会再推版
   - 打开/关闭现在有滑出 + 淡入动画，背后加了半透明黑色遮罩（`.nav-mobile-backdrop`），点遮罩也能关闭菜单，跟一般手机网站的菜单手感一致
