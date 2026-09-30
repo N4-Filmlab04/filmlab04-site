@@ -1,6 +1,6 @@
 # Filmlab04 网站技术栈
 
-> 整理时间：2026-09-06（最近更新：2026-09-29）　网址：https://filmlab04.com　repo：N4-Filmlab04/filmlab04-site
+> 整理时间：2026-09-06（最近更新：2026-09-30）　网址：https://filmlab04.com　repo：N4-Filmlab04/filmlab04-site
 
 > 2026-09-24 当天后续更新：维护模式改成后端强制拦截、WhatsApp 消息补齐联络资料/运费/真实商品清单、Mark as paid 卡死问题修好、Drop-off 时区修正——细节见下方各节。
 >
@@ -10,7 +10,9 @@
 >
 > 2026-09-28 更新：admin 后台新增 **Drop-offs** 分页，从独立的 Filmlab04 Drop-offs 表读资料显示（之前预约资料完全没接进后台，只能开原始 Sheet 看）；admin 页面排版调整（分页按钮置中、表格 Time 栏不换行、拿掉页面宽度上限改用满版）——细节见下方各节。
 >
-> 2026-09-29 更新：冲洗预约表单（services.html）的「How are you sending it?」加了第三个选项 **Nearby outlet**——客人可以选择就近的 N4 分店代收底片，再由分店转寄过来，不用只能 Walk-in 或自己寄快递；选 Nearby outlet 时付款方式锁死只能 Pay now（前端锁 + 后端也强制改写，双重保险）——细节见下方各节。
+> 2026-09-29 更新：冲洗预约表单（services.html）的「How are you sending it?」加了第三个选项 **Nearby outlet**——客人可以选择就近的 N4 分店代收底片，再由分店转寄过来，不用只能 Walk-in 或自己寄快递；选 Nearby outlet 时付款方式锁死只能 Pay now（前端锁 + 后端也强制改写，双重保险）；加收 RM12 分店转寄费——细节见下方各节。
+>
+> 2026-09-30 更新：Nearby outlet 的 Pay now WhatsApp 收据文字补上 Outlet 那一行，不然只看收据不知道客人是丢在哪一间分店——细节见下方各节。
 
 ## 资料流向
 
@@ -30,6 +32,7 @@
 - 冲洗预约表单（services.html / `js/dropoff.js`）「How are you sending it?」原本只有 Walk-in / Mail / Courier 两个选项，2026-09-29 加了第三个 **Nearby outlet**——选了之后会多出一个下拉选单，列出 N4 全马分店（写死在 `js/dropoff.js` 的 `DROPOFF_OUTLETS` 常数里），让客人选就近的分店代收；每个选项前面都带真实的 Outlet Code（N4-01、N4-05...，跟 Jun Min 提供的 N4 分店清单一致，会跳号因为 N4-02/03/04 不在这个清单里），方便跟分店对账/员工内部代号对上；**注意 Alor Setar 有两间**——N4-07（Aman Central）跟 N4-15（Pekan Melayu）不是同一间：N4-15 Pekan Melayu 是这个冲洗 lab 自己的门市，已经被 Walk-in 选项涵盖，所以**没有**放进 Nearby outlet 清单；N4-07 Aman Central 是不同的分店，**有**放进清单（2026-09-29 一开始漏放，后来补上）；每个选项后面也带楼层（例如「(1st floor)」），照原始分店清单的地址资料填，方便客人到商场直接找到楼层，不用再问；N4-13 JioSpace 没有楼层（原始地址没写，可能是独立门市不是商场里的一个楼层），所以没加；分店资料来源是 Jun Min 提供的 N4 分店清单截图（2026-09-29），之后 N4 开新分店或分店资讯有变，要手动更新这个常数（前端）+ 如果要在 admin 显示也不用动，因为是直接存文字进 Google Sheet，不是查表
   - 选 Nearby outlet 时「When to pay?」的 Pay later 按钮会自动变灰、不能点，付款方式强制锁定 Pay now——因为代收的分店不是自己的收银台，没有「之后再收款」这个流程；`dropoff-handler.gs` 后端也不信任前端送来的 payment 栏位，只要 method 是 Nearby outlet 一律强制改写成 Pay now 再存进表，双重防呆
   - 选 Nearby outlet 会额外加收 **RM12 分店转寄费**（一次性，不是每卷都收）——前端 `js/dropoff.js` 的 `OUTLET_FEE` 常数跟后端 `dropoff-handler.gs` 的 `priceDropoff_()` 都要算这笔费用，后端是权威计算（不信任前端送来的金额），前端只负责即时预览；跟结账「寄送」的 RM12 运费金额刚好一样，纯属巧合，两个是独立设定的常数，之后要改其中一个价钱不会互相影响
+  - Pay now 的 WhatsApp 收据文字（`dropoff-payment-step` 那步骤）原本只有 Name/Phone/Email，选 Nearby outlet 时看不出客人是在哪间分店寄的——2026-09-30 补上，只有 method 是 Nearby outlet 时才多加一行 Outlet；Walk-in（本来就是这间 lab）跟 Mail/Courier（本来就有 tracking number）不需要，维持原样
 - Favicon：网站根目录有 `favicon.ico`（跟 `images/favicon.png` 是同一个 logo，只是格式/位置不同）——Google 搜索结果等爬虫习惯先去网站根目录找 `/favicon.ico`，不一定会看页面 `<link rel="icon">` 指到的路径，少了根目录这个档案就会显示通用图示而不是真正 logo。改了之后 Google 搜索结果的图示要等它自己重新爬网站才会更新，通常要几天到几周，没办法用代码强制刷新
 
 ## 托管 / 部署

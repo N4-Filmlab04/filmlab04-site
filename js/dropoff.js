@@ -366,7 +366,14 @@ function initDropoff() {
         document.getElementById('dp-bank').textContent = PAYMENT_INFO.bankName || '—';
         document.getElementById('dp-account').textContent = PAYMENT_INFO.accountNumber || '—';
         document.getElementById('dp-holder').textContent = PAYMENT_INFO.accountHolder || '—';
-        const text = `Hi, here's my payment receipt for my film drop-off (${payload.rolls}x roll, ${payload.service}) — RM${subtotal.toFixed(2)}.\n\nName: ${payload.name}\nPhone: ${payload.phone}\nEmail: ${payload.email}`;
+        // Only Nearby outlet drop-offs need the outlet named here — that's
+        // the one method where staff can't otherwise tell where the film
+        // physically is (Walk-in is always this lab, Mail/Courier already
+        // has a tracking number).
+        const outletLine = payload.method === 'Nearby outlet' && payload.outletBranch
+          ? `\nOutlet: ${payload.outletBranch}`
+          : '';
+        const text = `Hi, here's my payment receipt for my film drop-off (${payload.rolls}x roll, ${payload.service}) — RM${subtotal.toFixed(2)}.\n\nName: ${payload.name}\nPhone: ${payload.phone}\nEmail: ${payload.email}${outletLine}`;
         document.getElementById('dp-whatsapp-link').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
         form.hidden = true;
         document.getElementById('dropoff-payment-step').hidden = false;
