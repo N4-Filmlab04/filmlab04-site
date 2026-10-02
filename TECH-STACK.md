@@ -55,7 +55,8 @@
     - 踩到一个坑：admin 填的 Date 栏位（像「2 October 2026」这种文字）被 Google Sheets 自动侦测成「日期」格式存进去，读回来变成 `Fri Oct 02 2026 00:00:00 GMT+0800...` 这种乱码——跟 Drop-offs 表当初的时区坑是同一个类型的问题（Sheets 自作主张转型别）。修法：`writeAllPosts_` 存档前把整个栏位的 number format 强制设成纯文字（`setNumberFormat('@')`），`readAllPosts_` 读取时也检查如果读到的是真正的 Date 物件（表示已经被转过型、或是旧资料），就用 `Utilities.formatDate` 转回乾净的日期字串——这样旧的、已经被污染的那一行资料下次读取也会自动修好，不用手动重打
   - `order-handler.gs` — 处理购物车结账送来的订单
   - `dropoff-handler.gs` — 处理冲洗预约表单；2026-09-29 加了 `Outlet Branch` 栏位（第17栏，加在 Notes 后面，不是插在中间——避免打乱既有栏位的固定 index 读法），对应表单新增的 Nearby outlet 选项
-- Google Drive — 存放商品图片（透过 Apps Script 的 DriveApp 上传）
+- Google Drive — 存放商品图片、Blog 封面图（透过 Apps Script 的 DriveApp 上传，`uploadImage_()` 这个 function 两边共用）
+  - 2026-10-02 发现一个坑：上传后原本回传 `drive.google.com/uc?export=view&id=...` 这种网址——直接在浏览器网址列打开没问题，但当成 `<img>` 嵌在 filmlab04.com 页面里（跨网域）会不稳定跳 503（实测验证：同一个网址，直接导航 OK，跨网域嵌入会失败），应该是 Google 针对「被其他网站盗连当图片用」的请求跟「使用者直接造访」这两种情境给的待遇不一样。改用 `lh3.googleusercontent.com/d/<file id>`（Google 自己的图片 CDN，Drive/Photos 预览图用的也是这个）——跨网域嵌入实测没问题。这个改动影响所有透过 admin.html 上传的图片（商品图 + Blog 封面图都算），不是 Blog 独有的问题，只是刚好是第一张透过这个功能上传、又放在正式站上测试的图片，才被抓到
 - 有多个颜色/款式（variant）的商品，Quantity 可以细到每个颜色分开算——卖掉某个颜色只扣那个颜色的库存，归零自动变 sold-out，其他颜色不受影响（还没填过颜色数量的旧商品，暂时会退回用整体 Quantity 当预设值）
 
 ## 订单与结账流程
