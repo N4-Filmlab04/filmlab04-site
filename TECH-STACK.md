@@ -1,6 +1,6 @@
 # Filmlab04 网站技术栈
 
-> 整理时间：2026-09-06（最近更新：2026-09-30）　网址：https://filmlab04.com　repo：N4-Filmlab04/filmlab04-site
+> 整理时间：2026-09-06（最近更新：2026-10-02）　网址：https://filmlab04.com　repo：N4-Filmlab04/filmlab04-site
 
 > 2026-09-24 当天后续更新：维护模式改成后端强制拦截、WhatsApp 消息补齐联络资料/运费/真实商品清单、Mark as paid 卡死问题修好、Drop-off 时区修正——细节见下方各节。
 >
@@ -24,7 +24,7 @@
 - 字体：Google Fonts（Inter、Poppins）
 - 页面：index、shop、product、cart（结账流程做在这页里面，不是独立页面）、services（含冲洗预约表单）、blog（文章列表）、blog-post（单篇文章，读网址 `?id=...`）、compare、admin、track-order（客人查订单状态用）
 - Blog：2026-09-30 从「所有文章塞在 blog.html 同一页」改成「列表页 + 每篇文章自己的页面」，做法照抄 shop.html/product.html 那一套——`js/blog.js` 负责在 blog.html 渲染列表（`.blog-list` 容器）、`js/blog-post.js` 负责在 blog-post.html 读网址的 `?id=` 渲染单篇（`.post-detail` 容器），两个页面都会载入 `js/blog.js`（`blog-post.js` 靠它的 `loadPosts()` 抓资料，所以载入顺序要在 `blog-post.js` 前面）；每篇文章：`id`（网址用，小写连字号）、`title`、`date`、`excerpt`（列表页摘要）、`coverImage`（可留空——跟商品图不同，留空就直接不显示图片区块，不会有「photo coming soon」占位，纯文字文章不需要硬塞一个空图框）、`content`（字串阵列，每个元素渲染成一个段落）
-  - 一开始资料放在纯静态的 `data/posts.json`（改文章要直接编辑这个 JSON、git push），2026-09-30 当天马上决定要能从 admin.html 直接管理，改接 Google Sheet 后端（见下方「资料库 / 后端」）——**`js/blog.js` 的 `loadPosts()` 目前暂时还没切过去**（还在读 `data/posts.json`），要等 Jun Min 把 Blog 的 Google Sheet 建好、`admin-api.gs` 也更新部署完成后才会切，避免在后端还没准备好的时候，把正式站上的 blog.html 弄坏；`data/posts.json` 里的两篇占位文章到时候会用同样的内容搬进 Sheet，不会遗失
+  - 一开始资料放在纯静态的 `data/posts.json`（改文章要直接编辑这个 JSON、git push），2026-09-30 当天马上决定要能从 admin.html 直接管理，改接 Google Sheet 后端（见下方「资料库 / 后端」）；一开始刻意先不让 `js/blog.js` 的 `loadPosts()` 切过去，等 Jun Min 把 Blog 的 Google Sheet 建好、`admin-api.gs` 部署、且实际在 admin.html 新增一篇文章测试成功之后，**2026-10-02 才正式切过去**，`loadPosts()` 现在改成打 `${PRODUCTS_ENDPOINT}?action=blog-posts`（跟商品共用同一个 Apps Script Web App），不再读 `data/posts.json`——这个档案留在 repo 里当历史参考，但已经没有任何页面在用了；原本 `data/posts.json` 里的两篇占位文章（Welcome to Filmlab04 / How we pick which film stocks to carry）**还没搬进 Sheet**，目前 Sheet 里只有 Jun Min 测试时建的那篇真实文章，blog.html 暂时只会显示那一篇
 - 手机导航：窄屏（≤720px）时桌面版的 Home/Shop/Services/Blog 连结会隐藏，改用汉堡选单（☰ 按钮）+ 下拉面板显示同样四个连结，逻辑写在 `js/cart.js`（每个页面都会载入这个档案）；汉堡按钮跟购物车图示包在同一个 `.nav-actions` 容器里、放在导览列最右边，两个挨在一起——分开当独立 flex 元素的话，购物车会被 `space-between` 排版挤到导览列正中间
   - 面板一开始是塞进正常文件流的，打开时会把下面的内容（LOGO、首图等）往下推开——改成 `position: fixed`，`top` 用 JS 量 nav 实际高度去对齐，变成浮在内容上面，不会再推版
   - 打开/关闭现在有滑出 + 淡入动画，背后加了半透明黑色遮罩（`.nav-mobile-backdrop`），点遮罩也能关闭菜单，跟一般手机网站的菜单手感一致
@@ -45,13 +45,14 @@
 
 ## 资料库 / 后端
 
-- Google Sheets 当资料库（3 张表：Filmlab04 Products 商品、Filmlab04 Orders 订单、Filmlab04 Drop-offs 冲洗预约；**第4张 Filmlab04 Blog 文章资料，2026-09-30 决定加，Jun Min 还在建，还没接上**）
+- Google Sheets 当资料库（4 张表：Filmlab04 Products 商品、Filmlab04 Orders 订单、Filmlab04 Drop-offs 冲洗预约、**Filmlab04 Blog 文章**——2026-09-30 决定加，2026-10-02 正式接上线）
 - Google Apps Script（3 个独立的 Web App，各自绑一张表）：
   - `admin-api.gs` — 商品 CRUD、销售总览、图片上传（新增商品时要选是单一款式还是多颜色/款式；库存状态改成填 Quantity 数字自动判断，不再是手动切 in-stock/sold-out）；销售总览统计方块除了 Total orders / Total order value，也加了 Pending / Paid 各自的笔数——从整张 Orders 表算，不是只算画面上显示的最近 200 笔，所以订单一多也不会算错；四个方块的文字都置中显示；销售总览也加了日期筛选（Today/Yesterday/Last 7 days/This month），纯前端算、不用改后端
     - Drop-offs 分页透过新的 `?action=dropoffs` 读取，跟 Orders 一样用 Sheet ID（`DROPOFFS_SHEET_ID`）跨表读取，不是绑定在这个专案自己的表上——欄位对照要照 `dropoff-handler.gs` 实际写入的顺序（Submitted At、Name、Phone、Email、Method、Courier Provider、Tracking Number、Rolls、Service、High-Res Scan、Subtotal、Payment、Keep Strips、Strips Return、Reference、Notes），不能照 Sheet 第一行的栏位标题读——**那张表本身的标题列历史上少打了「Subtotal (RM)」这个栏位，导致从 Payment 开始往右的栏位标题全部错位**，但实际储存的资料本身没有错，是标题列本身没跟上），所以后端改用固定栏位顺序（index）去读，不要照标题列
     - Reference 跟 Notes 是两个独立栏位（客人可能两个都填，或用途不一样——Reference 常常填「参考编号/信封编号」，Notes 才是「有什么要提醒我们的」自由文字），画面上要分开显示，不能合并成一栏，不然会漏资料
     - 2026-09-30 新增 Blog CRUD：`?action=blog-posts`（GET，公开不用登入——客人端 blog.html/blog-post.html 也是读这个）读取全部文章；`{action:'save-posts'}`（POST，要 idToken）整批覆写，跟商品的 `save-all` 同一套「整份清空重写」做法，不是一笔一笔改；文章存在独立的 Filmlab04 Blog 表（`BLOG_SHEET_ID`），栏位固定顺序 Post ID / Title / Date / Excerpt / Cover Image / Content，Content 一格里多段落用空行分隔（`\n\n`），前端 textarea 输入也用空行分段；封面图片直接借用商品图片上传的 `upload-image` action，不用另外做一套
-    - **这部分还没真正上线**：`BLOG_SHEET_ID` 目前是占位字串 `PASTE_BLOG_SHEET_ID_HERE`，Jun Min 建好 Google Sheet、admin-api.gs 更新部署之后才会动起来；admin.html 的 Blog 分页 UI 已经做好可以点，但在后端接上之前会显示「Could not load posts」之类的错误，这是预期中的，不是新 bug
+    - 2026-10-02 已实测上线：admin.html 新增文章 → 存进 Sheet → `blog.html`/`blog-post.html` 读到——全部串通确认过
+    - 踩到一个坑：admin 填的 Date 栏位（像「2 October 2026」这种文字）被 Google Sheets 自动侦测成「日期」格式存进去，读回来变成 `Fri Oct 02 2026 00:00:00 GMT+0800...` 这种乱码——跟 Drop-offs 表当初的时区坑是同一个类型的问题（Sheets 自作主张转型别）。修法：`writeAllPosts_` 存档前把整个栏位的 number format 强制设成纯文字（`setNumberFormat('@')`），`readAllPosts_` 读取时也检查如果读到的是真正的 Date 物件（表示已经被转过型、或是旧资料），就用 `Utilities.formatDate` 转回乾净的日期字串——这样旧的、已经被污染的那一行资料下次读取也会自动修好，不用手动重打
   - `order-handler.gs` — 处理购物车结账送来的订单
   - `dropoff-handler.gs` — 处理冲洗预约表单；2026-09-29 加了 `Outlet Branch` 栏位（第17栏，加在 Notes 后面，不是插在中间——避免打乱既有栏位的固定 index 读法），对应表单新增的 Nearby outlet 选项
 - Google Drive — 存放商品图片（透过 Apps Script 的 DriveApp 上传）

@@ -1,5 +1,7 @@
-/** Renders the post list on blog.html from data/posts.json. Depends on
- * cart.js for escapeHtml(). Each post links out to its own page
+/** Renders the post list on blog.html from the live "Filmlab04 Blog"
+ * Google Sheet (via admin-api.gs's Apps Script Web App — same endpoint
+ * products use, see PRODUCTS_ENDPOINT in cart.js). Depends on cart.js for
+ * escapeHtml() and PRODUCTS_ENDPOINT. Each post links out to its own page
  * (blog-post.html?id=...), rendered by js/blog-post.js.
  */
 
@@ -7,7 +9,7 @@ let __posts = null;
 
 async function loadPosts() {
   if (__posts) return __posts;
-  const res = await fetch('data/posts.json');
+  const res = await fetch(`${PRODUCTS_ENDPOINT}?action=blog-posts`);
   __posts = await res.json();
   return __posts;
 }
