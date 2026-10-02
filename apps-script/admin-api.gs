@@ -311,7 +311,13 @@ function readAllPosts_() {
     posts.push({
       id: String(row[0]),
       title: String(row[1] || ''),
-      date: String(row[2] || ''),
+      // A typed date like "2 October 2026" can get silently auto-converted
+      // by Sheets into a real Date cell (even though writeAllPosts_ now
+      // forces the column to plain text going forward — this still
+      // self-heals any row from before that fix, or any row created
+      // directly in the Sheet by hand). String(aDateObject) would otherwise
+      // produce a verbose JS Date string instead of a clean date.
+      date: row[2] instanceof Date ? Utilities.formatDate(row[2], 'Asia/Kuala_Lumpur', 'd MMMM yyyy') : String(row[2] || ''),
       excerpt: String(row[3] || ''),
       coverImage: String(row[4] || ''),
       content: String(row[5] || '').split('\n\n').filter(p => p.trim())
@@ -332,7 +338,15 @@ function writeAllPosts_(posts) {
     p.id, p.title || '', p.date || '', p.excerpt || '', p.coverImage || '',
     (Array.isArray(p.content) ? p.content : [p.content || '']).join('\n\n')
   ]);
-  if (rows.length) sheet.getRange(2, 1, rows.length, BLOG_HEADERS.length).setValues(rows);
+  if (rows.length) {
+    const range = sheet.getRange(2, 1, rows.length, BLOG_HEADERS.length);
+    // Plain text, not Sheets' auto-detected type — otherwise a typed date
+    // like "2 October 2026" in the Date column silently becomes a real
+    // Date cell, which reads back as a verbose JS Date string instead of
+    // what was actually typed. Must be set before setValues.
+    range.setNumberFormat('@');
+    range.setValues(rows);
+  }
 }
 
 // Sheet row index (1-based, matching getRange) of the order with this
