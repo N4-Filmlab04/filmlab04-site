@@ -104,7 +104,7 @@ const DROPOFFS_SHEET_ID = '1y7X7L2j2fpIGJqQuDI-C6tXYpvPCr8YGYf9XjMVDTxg';
 const BLOG_SHEET_ID = '1HYRPD-qlpdj5oKO7Yg86S4rD4xJN-FYdpUeD5kfVxrI';
 
 const HEADERS = ['ID', 'Brand', 'Name', 'Category', 'Price', 'Currency', 'Quantity', 'Data'];
-const BLOG_HEADERS = ['Post ID', 'Title', 'Date', 'Excerpt', 'Cover Image', 'Content'];
+const BLOG_HEADERS = ['Post ID', 'Title', 'Date', 'Excerpt', 'Cover Image', 'Content', 'More Images'];
 
 function getSheet_() {
   return SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
@@ -320,7 +320,11 @@ function readAllPosts_() {
       date: row[2] instanceof Date ? Utilities.formatDate(row[2], 'Asia/Kuala_Lumpur', 'd MMMM yyyy') : String(row[2] || ''),
       excerpt: String(row[3] || ''),
       coverImage: String(row[4] || ''),
-      content: String(row[5] || '').split('\n\n').filter(p => p.trim())
+      content: String(row[5] || '').split('\n\n').filter(p => p.trim()),
+      // Extra photos beyond the cover image (e.g. other slides from the
+      // same event poster/carousel) — one URL per line, shown after the
+      // content on blog-post.html.
+      images: String(row[6] || '').split('\n').map(s => s.trim()).filter(Boolean)
     });
   }
   return posts;
@@ -336,7 +340,8 @@ function writeAllPosts_(posts) {
   sheet.appendRow(BLOG_HEADERS);
   const rows = posts.map(p => [
     p.id, p.title || '', p.date || '', p.excerpt || '', p.coverImage || '',
-    (Array.isArray(p.content) ? p.content : [p.content || '']).join('\n\n')
+    (Array.isArray(p.content) ? p.content : [p.content || '']).join('\n\n'),
+    (Array.isArray(p.images) ? p.images : []).join('\n')
   ]);
   if (rows.length) {
     const range = sheet.getRange(2, 1, rows.length, BLOG_HEADERS.length);

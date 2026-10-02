@@ -665,6 +665,29 @@ function renderBlogTable() {
   });
 }
 
+// Same shape as sampleRow()/renderSampleRows()/readSampleImages() for
+// products, just scoped to the post editor's own ids/classes so the two
+// don't collide when both editors exist on the page.
+function postImageRow(path) {
+  return `
+    <div class="admin-sample-row">
+      <div class="admin-image-field">
+        <input type="text" class="pi-path" placeholder="images/blog/..." value="${escapeHtml(path)}">
+        ${uploadBtn()}
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm admin-post-image-remove">Remove</button>
+    </div>`;
+}
+
+function renderPostImageRows(images) {
+  document.getElementById('p-images-rows').innerHTML = (images || []).map(postImageRow).join('');
+}
+
+function readPostImages() {
+  const rows = document.querySelectorAll('#p-images-rows .pi-path');
+  return Array.from(rows).map(input => input.value.trim()).filter(Boolean);
+}
+
 function fillPostForm(post) {
   const p = post || {};
   document.getElementById('p-id').value = p.id || '';
@@ -672,6 +695,7 @@ function fillPostForm(post) {
   document.getElementById('p-title').value = p.title || '';
   document.getElementById('p-excerpt').value = p.excerpt || '';
   document.getElementById('p-cover').value = p.coverImage || '';
+  renderPostImageRows(p.images || []);
   const content = Array.isArray(p.content) ? p.content : [p.content || ''];
   document.getElementById('p-content').value = content.filter(Boolean).join('\n\n');
 }
@@ -684,6 +708,7 @@ function readPostForm() {
     title: str('p-title'),
     excerpt: str('p-excerpt'),
     coverImage: str('p-cover'),
+    images: readPostImages(),
     // Split on a blank line so each textarea paragraph becomes one array
     // entry — matches how writeAllPosts_ joins them back with '\n\n'.
     content: str('p-content').split(/\n\s*\n/).map(s => s.trim()).filter(Boolean)
@@ -1017,6 +1042,14 @@ function initAdmin() {
     document.getElementById('admin-post-new').addEventListener('click', () => openPostEditor(null));
     document.getElementById('admin-post-cancel').addEventListener('click', closePostEditor);
     document.getElementById('admin-post-save').addEventListener('click', savePostEditor);
+    document.getElementById('admin-post-image-add').addEventListener('click', () => {
+      document.getElementById('p-images-rows').insertAdjacentHTML('beforeend', postImageRow());
+    });
+    document.getElementById('p-images-rows').addEventListener('click', (e) => {
+      if (e.target.classList.contains('admin-post-image-remove')) {
+        e.target.closest('.admin-sample-row').remove();
+      }
+    });
     document.getElementById('admin-post-editor').addEventListener('change', async (e) => {
       if (e.target.type !== 'file') return;
       const fileInput = e.target;
