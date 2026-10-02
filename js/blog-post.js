@@ -23,7 +23,7 @@ async function renderPost() {
   root.innerHTML = `
     <div class="post-date">${escapeHtml(post.date)}</div>
     <h1>${escapeHtml(post.title)}</h1>
-    ${post.coverImage ? `<div class="product-card-img" style="border-radius:16px; aspect-ratio: 16/9; margin: 24px 0;"><img src="${escapeHtml(post.coverImage)}" alt="${escapeHtml(post.title)}"></div>` : ''}
+    ${post.coverImage ? `<img src="${escapeHtml(post.coverImage)}" alt="${escapeHtml(post.title)}" style="display:block; width:100%; height:auto; border-radius:16px; margin: 24px 0;">` : ''}
     ${content.map(p => `<p>${escapeHtml(p)}</p>`).join('')}`;
 }
 
