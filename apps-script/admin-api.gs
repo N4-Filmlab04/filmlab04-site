@@ -407,7 +407,15 @@ function uploadImage_(filename, mimeType, dataBase64) {
   const blob = Utilities.newBlob(bytes, mimeType, filename);
   const file = folder.createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  return 'https://drive.google.com/uc?export=view&id=' + file.getId();
+  // Not drive.google.com/uc?export=view — that URL form intermittently
+  // 503s when loaded as a cross-origin <img> (confirmed directly: it
+  // loads fine via a normal top-level navigation, but fails embedded from
+  // filmlab04.com), apparently because Google serves it differently for a
+  // hotlinked image request than for a direct visit. lh3.googleusercontent.com
+  // is Google's own image-serving CDN (same one Drive/Photos previews use)
+  // and loads reliably either way — confirmed with a real embedded <img>
+  // test from filmlab04.com before switching to it.
+  return 'https://lh3.googleusercontent.com/d/' + file.getId();
 }
 
 function getOrCreateImagesFolder_() {
