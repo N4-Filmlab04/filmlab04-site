@@ -52,9 +52,14 @@ function jsonOut_(obj) {
 // Shared by doGet and doPost. Never lets an unexpected error surface as
 // Apps Script's raw crash page — always responds with clean JSON so
 // js/dropoff.js's own error handling can show a real message instead.
+const ALLOWED_METHODS = ['Walk-in', 'Mail / Courier', 'Nearby outlet'];
+
 function recordDropoff_(data) {
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    if (ALLOWED_METHODS.indexOf(data.method) === -1) {
+      return jsonOut_({ ok: false, error: 'Invalid drop-off method' });
+    }
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
 
     if (sheet.getLastRow() === 0) {
       sheet.appendRow([
