@@ -1,6 +1,6 @@
 # Filmlab04 网站技术栈
 
-> 整理时间：2026-09-06（最近更新：2026-10-02）　网址：https://filmlab04.com　repo：N4-Filmlab04/filmlab04-site
+> 整理时间：2026-09-06（最近更新：2026-10-05）　网址：https://filmlab04.com　repo：N4-Filmlab04/filmlab04-site
 
 > 2026-09-24 当天后续更新：维护模式改成后端强制拦截、WhatsApp 消息补齐联络资料/运费/真实商品清单、Mark as paid 卡死问题修好、Drop-off 时区修正——细节见下方各节。
 >
@@ -50,6 +50,7 @@
 - Google Sheets 当资料库（4 张表：Filmlab04 Products 商品、Filmlab04 Orders 订单、Filmlab04 Drop-offs 冲洗预约、**Filmlab04 Blog 文章**——2026-09-30 决定加，2026-10-02 正式接上线）
 - Google Apps Script（3 个独立的 Web App，各自绑一张表）：
   - `admin-api.gs` — 商品 CRUD、销售总览、图片上传（新增商品时要选是单一款式还是多颜色/款式；库存状态改成填 Quantity 数字自动判断，不再是手动切 in-stock/sold-out）；销售总览统计方块除了 Total orders / Total order value，也加了 Pending / Paid 各自的笔数——从整张 Orders 表算，不是只算画面上显示的最近 200 笔，所以订单一多也不会算错；四个方块的文字都置中显示；销售总览也加了日期筛选（Today/Yesterday/Last 7 days/This month），纯前端算、不用改后端
+    - **2026-10-05 Drop-offs 分页出现 Blog 文章的根因**：live 的 `admin-api.gs` 里 `DROPOFFS_SHEET_ID` 被误填成 Blog 表的 ID（跟 `BLOG_SHEET_ID` 一样），所以 admin 的 Drop-offs 分页其实在读 Blog 表，文章栏位被当成预约栏位显示（标题→Name、日期→Phone、摘要→Email、封面网址→Method）。Drop-offs 表本身没有被写入任何东西，所以版本记录、Executions 都查不到。修法：`DROPOFFS_SHEET_ID` 改回 `1y7X7L2j2fpIGJqQuDI-C6tXYpvPCr8YGYf9XjMVDTxg` 并重新部署。以后改常数时要确认 Orders / Drop-offs / Blog 三个 ID 各自对应正确的表、不能重复
     - Drop-offs 分页透过新的 `?action=dropoffs` 读取，跟 Orders 一样用 Sheet ID（`DROPOFFS_SHEET_ID`）跨表读取，不是绑定在这个专案自己的表上——欄位对照要照 `dropoff-handler.gs` 实际写入的顺序（Submitted At、Name、Phone、Email、Method、Courier Provider、Tracking Number、Rolls、Service、High-Res Scan、Subtotal、Payment、Keep Strips、Strips Return、Reference、Notes），不能照 Sheet 第一行的栏位标题读——**那张表本身的标题列历史上少打了「Subtotal (RM)」这个栏位，导致从 Payment 开始往右的栏位标题全部错位**，但实际储存的资料本身没有错，是标题列本身没跟上），所以后端改用固定栏位顺序（index）去读，不要照标题列
     - Reference 跟 Notes 是两个独立栏位（客人可能两个都填，或用途不一样——Reference 常常填「参考编号/信封编号」，Notes 才是「有什么要提醒我们的」自由文字），画面上要分开显示，不能合并成一栏，不然会漏资料
     - 2026-09-30 新增 Blog CRUD：`?action=blog-posts`（GET，公开不用登入——客人端 blog.html/blog-post.html 也是读这个）读取全部文章；`{action:'save-posts'}`（POST，要 idToken）整批覆写，跟商品的 `save-all` 同一套「整份清空重写」做法，不是一笔一笔改；文章存在独立的 Filmlab04 Blog 表（`BLOG_SHEET_ID`），栏位固定顺序 Post ID / Title / Date / Excerpt / Cover Image / Content，Content 一格里多段落用空行分隔（`\n\n`），前端 textarea 输入也用空行分段；封面图片直接借用商品图片上传的 `upload-image` action，不用另外做一套
@@ -57,6 +58,7 @@
     - 踩到一个坑：admin 填的 Date 栏位（像「2 October 2026」这种文字）被 Google Sheets 自动侦测成「日期」格式存进去，读回来变成 `Fri Oct 02 2026 00:00:00 GMT+0800...` 这种乱码——跟 Drop-offs 表当初的时区坑是同一个类型的问题（Sheets 自作主张转型别）。修法：`writeAllPosts_` 存档前把整个栏位的 number format 强制设成纯文字（`setNumberFormat('@')`），`readAllPosts_` 读取时也检查如果读到的是真正的 Date 物件（表示已经被转过型、或是旧资料），就用 `Utilities.formatDate` 转回乾净的日期字串——这样旧的、已经被污染的那一行资料下次读取也会自动修好，不用手动重打
   - `order-handler.gs` — 处理购物车结账送来的订单
   - `dropoff-handler.gs` — 处理冲洗预约表单；2026-09-29 加了 `Outlet Branch` 栏位（第17栏，加在 Notes 后面，不是插在中间——避免打乱既有栏位的固定 index 读法），对应表单新增的 Nearby outlet 选项
+    - 2026-10-05 加了两个防护：写入固定用第一页（`getSheets()[0]`，不再用 `getActiveSheet()`，避免切换分页时写错地方）；`method` 不在允许清单（Walk-in / Mail / Courier / Nearby outlet）就拒绝写入。这个网址是公开的（Anyone 可访问），任何人知道网址都能送请求，所以要靠这类栏位检查挡掉错误资料；实测送一个不认识的 method 会回 `Invalid drop-off method`、不写入
 - Google Drive — 存放商品图片、Blog 封面图（透过 Apps Script 的 DriveApp 上传，`uploadImage_()` 这个 function 两边共用）
   - 2026-10-02 发现一个坑：上传后原本回传 `drive.google.com/uc?export=view&id=...` 这种网址——直接在浏览器网址列打开没问题，但当成 `<img>` 嵌在 filmlab04.com 页面里（跨网域）会不稳定跳 503（实测验证：同一个网址，直接导航 OK，跨网域嵌入会失败），应该是 Google 针对「被其他网站盗连当图片用」的请求跟「使用者直接造访」这两种情境给的待遇不一样。改用 `lh3.googleusercontent.com/d/<file id>`（Google 自己的图片 CDN，Drive/Photos 预览图用的也是这个）——跨网域嵌入实测没问题。这个改动影响所有透过 admin.html 上传的图片（商品图 + Blog 封面图都算），不是 Blog 独有的问题，只是刚好是第一张透过这个功能上传、又放在正式站上测试的图片，才被抓到
 - 有多个颜色/款式（variant）的商品，Quantity 可以细到每个颜色分开算——卖掉某个颜色只扣那个颜色的库存，归零自动变 sold-out，其他颜色不受影响（还没填过颜色数量的旧商品，暂时会退回用整体 Quantity 当预设值）
