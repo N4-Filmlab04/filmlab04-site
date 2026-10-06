@@ -342,7 +342,9 @@ function initDropoff() {
     }
 
     const submitBtn = form.querySelector('button[type=submit]');
+    const submitLabel = submitBtn.textContent;
     submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
     try {
       const result = await submitDropoff(payload);
       const payNow = payload.payment === 'Pay now';
@@ -387,6 +389,7 @@ function initDropoff() {
       showDropoffError(err.message);
     } finally {
       submitBtn.disabled = false;
+      submitBtn.textContent = submitLabel;
     }
   });
 }
