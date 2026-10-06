@@ -49,7 +49,9 @@ const DROPOFF_OUTLETS = [
   'N4-11 · Ipoh, Perak — AEON Mall Kinta City (1st floor)',
   'N4-12 · Perai, Penang — Sunway Carnival Mall (2nd floor)',
   'N4-13 · Petaling Jaya, Selangor — JioSpace',
-  'N4-14 · Kuala Lumpur — MyTOWN Shopping Centre (3rd floor)'
+  'N4-14 · Kuala Lumpur — MyTOWN Shopping Centre (3rd floor)',
+  'N4-16 · Ipoh, Perak — Jalan Niaga Simee',
+  'N4-17 · Shah Alam, Selangor — Central i-City'
 ];
 
 function estimateDropoffTotal(service, rolls, highResScan, method) {
