@@ -1,6 +1,6 @@
 # Filmlab04 网站技术栈
 
-> 整理时间：2026-09-06（最近更新：2026-10-05）　网址：https://filmlab04.com　repo：N4-Filmlab04/filmlab04-site
+> 整理时间：2026-09-06（最近更新：2026-10-08）　网址：https://filmlab04.com　repo：N4-Filmlab04/filmlab04-site
 
 > 2026-09-24 当天后续更新：维护模式改成后端强制拦截、WhatsApp 消息补齐联络资料/运费/真实商品清单、Mark as paid 卡死问题修好、Drop-off 时区修正——细节见下方各节。
 >
@@ -13,6 +13,12 @@
 > 2026-09-29 更新：冲洗预约表单（services.html）的「How are you sending it?」加了第三个选项 **Nearby outlet**——客人可以选择就近的 N4 分店代收底片，再由分店转寄过来，不用只能 Walk-in 或自己寄快递；选 Nearby outlet 时付款方式锁死只能 Pay now（前端锁 + 后端也强制改写，双重保险）；加收 RM12 分店转寄费——细节见下方各节。
 >
 > 2026-09-30 更新：Nearby outlet 的 Pay now WhatsApp 收据文字补上 Outlet 那一行，不然只看收据不知道客人是丢在哪一间分店；Blog 从「全部文章塞在同一页」改成「列表页 + 每篇文章自己的页面」（跟 shop/product 同一个做法）；admin.html 新增 **Blog** 分页，之后 Jun Min 可以直接在后台加/改/删文章，不用再麻烦我改 code——**这部分后端还没接上**，需要 Jun Min 建一张新 Google Sheet + 更新 admin-api.gs 才会真的动起来，细节见下方「资料库 / 后端」一节。
+>
+> 2026-10-02 更新：Blog 后端正式接上线（Google Sheet + admin-api.gs 都部署好了），admin.html 可以直接加/改/删文章；文章封面图跟附加图片的裁切/显示问题修好，图片改用更稳定的网址格式（`lh3.googleusercontent.com`）；日期栏位被 Google Sheets 自动转型的坑也修好。
+>
+> 2026-10-05 更新：查出 admin 的 Drop-offs 分页会显示 Blog 文章的根因——`admin-api.gs` 的 `DROPOFFS_SHEET_ID` 曾经被误填成 Blog 表的 ID，已修正；Drop-off 后端加了两个防护（固定写入第一页、`method` 白名单检查）。
+>
+> 2026-10-06 到 2026-10-08 更新：Nearby outlet 分店清单补上 N4-16（Ipoh）、N4-17（Shah Alam）；Drop-off 表单的 Submit 按钮送出时会显示「Submitting...」；清掉 Orders 表里一批开发测试留下的垃圾资料；新增 `SECURITY.md`，并照着处理了里面列的风险（`INTERNAL_KEY` 改存 Script Properties、不再写死进 git；确认四张 Google Sheet 的共享设定都是 Restricted）；确认 filmlab04.com 的 DNS 设定没问题，Squarespace 那边跳出的「Update DNS records」提示不用理会（那是要推你改用 Squarespace 自家网站服务，按下去会把现在指向 GitHub Pages 的设定盖掉）——细节见下方各节跟 `SECURITY.md`。
 
 ## 资料流向
 
@@ -34,6 +40,8 @@
 - 购物车图示（`.nav-cart`）本身是个连去 cart.html 的连结，点击时原本会同时触发「打开抽屉」跟「跳转页面」，抽屉的滑出动画根本来不及播放就已经跳走了——修成只有页面上真的有抽屉（首页/Shop/Product/Services/Blog/Compare）时才拦下跳转、改成开抽屉；没有抽屉的页面（cart.html 本身、admin、track-order）維持正常跳转
 - admin.html 的资料表格（Sales overview、Drop-offs）：分页按钮（Product catalog / Sales overview / Drop-offs）置中；表格第一栏（Time）设 `white-space: nowrap`，不然日期时间会挤成好几行很难看，表格本来就有横向卷动（`.admin-table-scroll`）所以栏位变宽没差；admin 页面本身拿掉了 `.container` 原本 1120px 的宽度上限（用专属的 `.admin-wide-container`），满版显示、减少表格需要横向卷动的机会——这个上限只对 admin.html 拿掉，其他页面维持原本的阅读宽度
 - 冲洗预约表单（services.html / `js/dropoff.js`）「How are you sending it?」原本只有 Walk-in / Mail / Courier 两个选项，2026-09-29 加了第三个 **Nearby outlet**——选了之后会多出一个下拉选单，列出 N4 全马分店（写死在 `js/dropoff.js` 的 `DROPOFF_OUTLETS` 常数里），让客人选就近的分店代收；每个选项前面都带真实的 Outlet Code（N4-01、N4-05...，跟 Jun Min 提供的 N4 分店清单一致，会跳号因为 N4-02/03/04 不在这个清单里），方便跟分店对账/员工内部代号对上；**注意 Alor Setar 有两间**——N4-07（Aman Central）跟 N4-15（Pekan Melayu）不是同一间：N4-15 Pekan Melayu 是这个冲洗 lab 自己的门市，已经被 Walk-in 选项涵盖，所以**没有**放进 Nearby outlet 清单；N4-07 Aman Central 是不同的分店，**有**放进清单（2026-09-29 一开始漏放，后来补上）；每个选项后面也带楼层（例如「(1st floor)」），照原始分店清单的地址资料填，方便客人到商场直接找到楼层，不用再问；N4-13 JioSpace 没有楼层（原始地址没写，可能是独立门市不是商场里的一个楼层），所以没加；分店资料来源是 Jun Min 提供的 N4 分店清单截图（2026-09-29），之后 N4 开新分店或分店资讯有变，要手动更新这个常数（前端）+ 如果要在 admin 显示也不用动，因为是直接存文字进 Google Sheet，不是查表
+  - 2026-10-06 补上 **N4-16**（Ipoh, Perak — Jalan Niaga Simee）、**N4-17**（Shah Alam, Selangor — Central i-City），现在清单共 13 间；这两间没有楼层资料（Jun Min 只给了地址跟电话），所以没加楼层
+  - 2026-10-06 Submit 按钮送出时会显示「Submitting...」并停用，送完/失败后恢复原本文字，避免客人看不出表单在处理中、重复按
   - 选 Nearby outlet 时「When to pay?」的 Pay later 按钮会自动变灰、不能点，付款方式强制锁定 Pay now——因为代收的分店不是自己的收银台，没有「之后再收款」这个流程；`dropoff-handler.gs` 后端也不信任前端送来的 payment 栏位，只要 method 是 Nearby outlet 一律强制改写成 Pay now 再存进表，双重防呆
   - 选 Nearby outlet 会额外加收 **RM12 分店转寄费**（一次性，不是每卷都收）——前端 `js/dropoff.js` 的 `OUTLET_FEE` 常数跟后端 `dropoff-handler.gs` 的 `priceDropoff_()` 都要算这笔费用，后端是权威计算（不信任前端送来的金额），前端只负责即时预览；跟结账「寄送」的 RM12 运费金额刚好一样，纯属巧合，两个是独立设定的常数，之后要改其中一个价钱不会互相影响
   - Pay now 的 WhatsApp 收据文字（`dropoff-payment-step` 那步骤）原本只有 Name/Phone/Email，选 Nearby outlet 时看不出客人是在哪间分店寄的——2026-09-30 补上，只有 method 是 Nearby outlet 时才多加一行 Outlet；Walk-in（本来就是这间 lab）跟 Mail/Courier（本来就有 tracking number）不需要，维持原样
@@ -41,9 +49,13 @@
 
 ## 托管 / 部署
 
-- GitHub（repo：N4-Filmlab04/filmlab04-site）
+- GitHub（repo：N4-Filmlab04/filmlab04-site，**这个 repo 是 Public**，安全相关的事项见 `SECURITY.md`）
 - GitHub Pages（网站实际跑在这上面，push 到 main 分支后自动重新部署）
-- 自定义域名：filmlab04.com
+- 自定义域名：filmlab04.com——网域注册/DNS 管理在 **Squarespace**（不是拿来建站用，纯粹管网域），实际网站内容在 GitHub Pages
+  - repo 根目录的 `CNAME` 档案只登记了 `filmlab04.com`，GitHub Pages 只会回应这个网域（跟 `www` 子网域），其他子网域（像曾经加过的 `shop.filmlab04.com`）就算 DNS 指对了，GitHub 也不会认得，打开会看不到网站内容——2026-10-08 发现一笔做 shop 功能时误加的 `CNAME shop → n4-filmlab04.github.io`，确认没在用、已删除
+  - 正确的 DNS 设定：根网域 4 笔 **A 记录**指向 GitHub Pages 的固定 IP（`185.199.108.153` / `.109.153` / `.110.153` / `.111.153`），`www` 一笔 **CNAME** 指向 `n4-filmlab04.github.io`——2026-10-08 确认过 Squarespace 这边的设定完全正确
+  - **Squarespace 的网域管理页面会跳出「Update DNS records」/「套用 Squarespace Defaults」的提示，不要按**——那是 Squarespace 想推你改用它自家的网站服务，按下去会把现在指向 GitHub Pages 的 A 记录/CNAME 覆盖掉，直接让 filmlab04.com 打不开现在的网站。这是 Squarespace 对「网域没连到它自己的网站产品」给的通用提示，不代表 DNS 真的有问题
+  - 邮件相关的 MX/TXT（SPF、DKIM）记录是 Google Workspace 在管，跟网站无关，不要动
 
 ## 资料库 / 后端
 
@@ -56,7 +68,9 @@
     - 2026-09-30 新增 Blog CRUD：`?action=blog-posts`（GET，公开不用登入——客人端 blog.html/blog-post.html 也是读这个）读取全部文章；`{action:'save-posts'}`（POST，要 idToken）整批覆写，跟商品的 `save-all` 同一套「整份清空重写」做法，不是一笔一笔改；文章存在独立的 Filmlab04 Blog 表（`BLOG_SHEET_ID`），栏位固定顺序 Post ID / Title / Date / Excerpt / Cover Image / Content，Content 一格里多段落用空行分隔（`\n\n`），前端 textarea 输入也用空行分段；封面图片直接借用商品图片上传的 `upload-image` action，不用另外做一套
     - 2026-10-02 已实测上线：admin.html 新增文章 → 存进 Sheet → `blog.html`/`blog-post.html` 读到——全部串通确认过
     - 踩到一个坑：admin 填的 Date 栏位（像「2 October 2026」这种文字）被 Google Sheets 自动侦测成「日期」格式存进去，读回来变成 `Fri Oct 02 2026 00:00:00 GMT+0800...` 这种乱码——跟 Drop-offs 表当初的时区坑是同一个类型的问题（Sheets 自作主张转型别）。修法：`writeAllPosts_` 存档前把整个栏位的 number format 强制设成纯文字（`setNumberFormat('@')`），`readAllPosts_` 读取时也检查如果读到的是真正的 Date 物件（表示已经被转过型、或是旧资料），就用 `Utilities.formatDate` 转回乾净的日期字串——这样旧的、已经被污染的那一行资料下次读取也会自动修好，不用手动重打
+    - **2026-10-08 `INTERNAL_KEY` 改存 Script Properties**：这个共享密钥本来写死在 `admin-api.gs` 和 `order-handler.gs` 里、commit 进了 Public 的 GitHub repo，等于密钥被公开。两个专案都改成 `PropertiesService.getScriptProperties().getProperty('INTERNAL_KEY')` 读取，真实的值只在 Script Properties 设定（不会进 git），repo 里的代码不再有真实密钥。细节跟新密钥的交接记录见 `SECURITY.md`
   - `order-handler.gs` — 处理购物车结账送来的订单
+    - 2026-10-08：Orders 表里发现一批开发测试留下的垃圾资料（Client Ref 像 `test-dedupe-...`、`timing-check-...`、`warmup-test-...` 这种明显是测试用的命名），已经手动清掉；UUID 格式的 Client Ref（例如 `283e454e-c564-...`）是网站正常下单会自动产生的真实格式，不要跟测试资料搞混、误删真实订单
   - `dropoff-handler.gs` — 处理冲洗预约表单；2026-09-29 加了 `Outlet Branch` 栏位（第17栏，加在 Notes 后面，不是插在中间——避免打乱既有栏位的固定 index 读法），对应表单新增的 Nearby outlet 选项
     - 2026-10-05 加了两个防护：写入固定用第一页（`getSheets()[0]`，不再用 `getActiveSheet()`，避免切换分页时写错地方）；`method` 不在允许清单（Walk-in / Mail / Courier / Nearby outlet）就拒绝写入。这个网址是公开的（Anyone 可访问），任何人知道网址都能送请求，所以要靠这类栏位检查挡掉错误资料；实测送一个不认识的 method 会回 `Invalid drop-off method`、不写入
 - Google Drive — 存放商品图片、Blog 封面图（透过 Apps Script 的 DriveApp 上传，`uploadImage_()` 这个 function 两边共用）
