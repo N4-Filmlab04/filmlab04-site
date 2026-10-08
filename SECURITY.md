@@ -14,10 +14,10 @@
 
 ## 已知风险 / 待处理
 
-### 1. `INTERNAL_KEY` 已经被公开（需要换掉）—— 2026-10-08 发现，还没处理
-`flb04-internal-9c72e1a4` 这个密钥写死在 `apps-script/order-handler.gs` 和 `apps-script/admin-api.gs`，而且这个 GitHub repo 是 **Public**，所以密钥已经被任何人看得到。理论上有人可以拿这个密钥直接打 `?action=decrement-stock` 乱改库存数字。
+### 1. `INTERNAL_KEY` 已经被公开 —— 2026-10-08 发现，已修好（待部署）
+旧密钥 `flb04-internal-9c72e1a4` 写死在 `apps-script/order-handler.gs` 和 `apps-script/admin-api.gs`，而这个 GitHub repo 是 **Public**，所以密钥已经被任何人看得到。
 
-**待办**：生一个新密钥、两个档案都要改、都要重新部署，旧密钥才会失效。这件事还没做。
+**修法**：两个档案都改成从 `PropertiesService.getScriptProperties().getProperty('INTERNAL_KEY')` 读取，不再写死在代码里——这样以后密钥永远不会进 git。新密钥只透过聊天给 Jun Min，他要自己去两个 Apps Script 专案的 **Project Settings → Script Properties** 加一个 `INTERNAL_KEY` 属性、填新值、重新部署，两边的值要一样。**截至 2026-10-08，代码已改好推上 repo，但还没确认两个专案都设好 Script Properties 并重新部署。**
 
 ### 2. Google Sheet 的共享设定要人工确认
 `ORDERS_SHEET_ID`、`DROPOFFS_SHEET_ID`、`BLOG_SHEET_ID` 这几个 ID 也写死在 `admin-api.gs` 并且公开可见。ID 本身不会让人打开表格，但如果表格的 Share 设定是「知道连结的人都能查看/编辑」，别人拿到 ID 就能绕过网站直接看到真实客人姓名、电话、email。
