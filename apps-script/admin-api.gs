@@ -89,7 +89,12 @@ const GOOGLE_CLIENT_ID = 'PASTE_YOUR_OAUTH_CLIENT_ID_HERE';
 // ever calls this action), just enough that a stranger who finds this URL
 // can't quietly zero out the catalog. Must match INTERNAL_KEY in
 // apps-script/order-handler.gs.
-const INTERNAL_KEY = 'flb04-internal-9c72e1a4';
+// Not hardcoded — a secret like this committed directly to source ends up
+// public the moment it's pushed (this repo is public on GitHub, which is
+// exactly how the old hardcoded key got exposed). Set via Project Settings
+// -> Script Properties -> add property INTERNAL_KEY, same value as the
+// Orders project's. Never put the real value in this repo.
+const INTERNAL_KEY = PropertiesService.getScriptProperties().getProperty('INTERNAL_KEY');
 
 // The spreadsheet ID of the existing "Filmlab04 Orders" sheet (from its URL:
 // docs.google.com/spreadsheets/d/THIS_PART/edit).

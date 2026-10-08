@@ -50,7 +50,12 @@ const ORDER_ID_DIGITS = 6;
 // Must match INTERNAL_KEY in apps-script/admin-api.gs — sent when calling
 // its ?action=decrement-stock so a stranger who finds that URL can't
 // quietly zero out the catalog.
-const INTERNAL_KEY = 'flb04-internal-9c72e1a4';
+// Not hardcoded — a secret like this committed directly to source ends up
+// public the moment it's pushed (this repo is public on GitHub, which is
+// exactly how the old hardcoded key got exposed). Set via Project Settings
+// -> Script Properties -> add property INTERNAL_KEY, same value as the
+// Products/Admin project's. Never put the real value in this repo.
+const INTERNAL_KEY = PropertiesService.getScriptProperties().getProperty('INTERNAL_KEY');
 
 // Reduces each purchased product's Quantity in the "Filmlab04 Products"
 // sheet right after an order is recorded, so a product that sells out
